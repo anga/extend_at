@@ -48,9 +48,18 @@ module ActsAsConfiguration
         defaults_ = YAML.parse_file(options[:file]).to_ruby
         defaults_ = {} if not defaults_.kind_of? Hash
       elsif options[:defaults].kind_of? Hash
-        defaults_ = options[:defaults]
+        defaults_ = transform_defaults options[:defaults]
       end
       defaults_
+    end
+
+    # Only we accept strings as key
+    def transform_defaults(hash)
+      _hash = {}
+      hash.each do |key, value|
+        _hash[key.to_s] = value
+      end
+      _hash
     end
   end
 
@@ -62,7 +71,7 @@ module ActsAsConfiguration
 
       class_eval <<-EOV
         def #{column_name}
-          @#{column_name}_configuration ||= ActsAsConfiguration::Configuration.new {:model => self, :column_name => :#{column_name}, :defaults => #{options[:defaults]}} if @#{column_name}_configuration.kind_of? ActsAsConfiguration::Configuration
+          @#{column_name}_configuration ||= ActsAsConfiguration::Configuration.new({:model => self, :column_name => :#{column_name}, :defaults => #{options[:defaults]}}) if @#{column_name}_configuration.kind_of? ActsAsConfiguration::Configuration
           @#{column_name}_configuration
         end
       EOV
