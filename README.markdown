@@ -18,43 +18,34 @@ Only you need to add the next line in your model.
 
 For example:
 
-<pre>
-  class User < ActiveRecord::Base
-    acts_as_configuration :configuration
-  end
-</pre>
+    class User < ActiveRecord::Base
+      acts_as_configuration :configuration
+    end
 
 Now you can write your configuration like:
 
-<pre>
-  user.configuration.private_photos = true
-  user.configuration.subscribe_to_news = false
-  user.configuration.perfil_description = ''
-  user.save
-</pre>
+    user.configuration.private_photos = true
+    user.configuration.subscribe_to_news = false
+    user.configuration.perfil_description = ''
+    user.save
 
 ### Defaults values
 
 You can add defaults values easily doing this:
 
-<pre>
-  class User < ActiveRecord::Base
-    acts_as_configuration :configuration, :defaults => { :private_photos => true, :subscribe_to_news => false, :perfil_description => ''}
-  end
-</pre>
+    class User < ActiveRecord::Base
+      acts_as_configuration :configuration, :defaults => { :private_photos => true, :subscribe_to_news => false, :perfil_description => ''}
+    end
 
 But if you like to put the defaults values in a yaml file, you can do this:
 
-<pre>
-  class User < ActiveRecord::Base
-    acts_as_configuration :configuration, :file => File.join(Rails.root, 'config', 'user_defaults.yaml')
-  end
-</pre>
+    class User < ActiveRecord::Base
+      acts_as_configuration :configuration, :file => File.join(Rails.root, 'config', 'user_defaults.yaml')
+    end
 
 And in config/user_defaults.yaml:
-<pre>
-  ---
-  private_photos: true
-  subscribe_to_news: false
-  perfil_description: ''
-</pre>
+
+    ---
+    private_photos: true
+    subscribe_to_news: false
+    perfil_description: ''
