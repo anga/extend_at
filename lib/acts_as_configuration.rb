@@ -83,13 +83,10 @@ module ActsAsConfiguration
       options = {
           :defaults => {}
         }.merge! options
-
-      print "Ejecutando: #{column_name.class} #{column_name}...\n"
       
       class_eval <<-EOV
       public
         def #{column_name.to_s}
-          print "Ejecutando la columna\n"
           @#{column_name.to_s}_configuration ||= ActsAsConfiguration::Configuration.new({:model => self, :column_name => :#{column_name.to_s}, :defaults => #{options[:defaults]}}) if not @#{column_name.to_s}_configuration.kind_of? ActsAsConfiguration::Configuration
           @#{column_name.to_s}_configuration
         end
