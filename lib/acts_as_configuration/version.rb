@@ -1,3 +1,3 @@
 module ActsAsConfiguration
-  VERSION = "0.0.1-r2"
+  VERSION = "0.0.1"
 end
