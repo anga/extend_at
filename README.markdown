@@ -25,6 +25,7 @@ For example:
 </pre>
 
 Now you can write your configuration like:
+
 <pre>
   user.configuration.private_photos = true
   user.configuration.subscribe_to_news = false

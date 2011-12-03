@@ -8,37 +8,52 @@ module ActsAsConfiguration
   class Configuration
     def initialize(options={})
       @model = options[:model]
-      @column_name = options[:column_name]
+      @column_name = options[:column_name].to_s
       @value = get_defaults_values options
       
-      raise "#{@column_name} should by text or string" if [:text, :stiring].include? u.column_for_attribute(@column_name.to_sym).type
+      raise "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
 
-      db_value = YAML.parse(@model[@column_name]).to_ruby
+      out = YAML.parse(@model[@column_name].to_s)
+      if out == false
+        db_value = nil
+      else
+        db_value = out.to_ruby
+      end
       @value.merge! db_value if db_value.kind_of? Hash
 
       initialize_values
       
       # Raise or not if fail?...
-      @model.uppdate_attributes({@column_name => {}.to_yaml })
+      @model.attributes[@column_name] = @value
+      @model.save
+    end
+
+    def [](key)
+      @value[key.to_s]
     end
 
     def []=(key, value)
-      @value[key.to_s.to_sym] = value
-      model[@column_name] = value.to_yaml
+      @value[key.to_s] = value
+      @model.update_column @column_name, @value.to_yaml
     end
 
     def method_missing(m, *args, &block)
-      super if m !~ /\=$/
-      column_name = m.to_s.gsub(/\=$/, '')
-      self[column_name.to_sym] = args
+      # r
+      if m !~ /\=$/
+        self[m.to_s]
+      # w
+      else
+        column_name = m.to_s.gsub(/\=$/, '')
+        self[column_name.to_s] = args.first
+      end
     end
 
     private
     
     def initialize_values
       if not @value.kind_of? Hash
-        @model.uppdate_attributes({@column_name => {}.to_yaml})
-#         @value = {}
+        @model.attributes[@column_name] = {}.to_yaml
+        @model.save
       end
     end
 
@@ -69,10 +84,14 @@ module ActsAsConfiguration
           :defaults => {}
         }.merge! options
 
+      print "Ejecutando: #{column_name.class} #{column_name}...\n"
+      
       class_eval <<-EOV
-        def #{column_name}
-          @#{column_name}_configuration ||= ActsAsConfiguration::Configuration.new({:model => self, :column_name => :#{column_name}, :defaults => #{options[:defaults]}}) if @#{column_name}_configuration.kind_of? ActsAsConfiguration::Configuration
-          @#{column_name}_configuration
+      public
+        def #{column_name.to_s}
+          print "Ejecutando la columna\n"
+          @#{column_name.to_s}_configuration ||= ActsAsConfiguration::Configuration.new({:model => self, :column_name => :#{column_name.to_s}, :defaults => #{options[:defaults]}}) if not @#{column_name.to_s}_configuration.kind_of? ActsAsConfiguration::Configuration
+          @#{column_name.to_s}_configuration
         end
       EOV
     end
