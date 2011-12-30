@@ -19,7 +19,7 @@ Only you need to add the next line in your model.
 For example:
 
     class User < ActiveRecord::Base
-      acts_as_configuration :configuration
+      acts_as_configuration :config
     end
 
 Now you can write your configuration like:
@@ -29,23 +29,136 @@ Now you can write your configuration like:
     user.configuration.perfil_description = ''
     user.save
 
-### Defaults values
+### Columns configuration
 
-You can add defaults values easily doing this:
+You can configurate each column.
 
-    class User < ActiveRecord::Base
-      acts_as_configuration :configuration, :defaults => { :private_photos => true, :subscribe_to_news => false, :perfil_description => ''}
-    end
+#### Set column type
 
-But if you like to put the defaults values in a yaml file, you can do this:
+You can set the type of the colum.
 
     class User < ActiveRecord::Base
-      acts_as_configuration :configuration, :file => File.join(Rails.root, 'config', 'user_defaults.yaml')
+      acts_as_configuration :config, :columns => {
+        :private_photos => {
+          :type => :boolean
+        }, :age => {
+          :type => :get_type
+        }, :perfil_description => {
+          :type => lambda {
+            String
+          }
+        }, :last_loggin => {
+          :type => Time.now.class
+        }, :subscribe_to_rss => :get_rss_config
+      }
+
+      protected
+      def get_type
+        Fixnum
+      end
+
+      def get_rss_config
+        {
+          :type => :boolean
+        }
+      end
     end
 
-And in config/user_defaults.yaml:
+You can use any class, but if you need use boolean values, you must use :boolean.
 
-    ---
-    private_photos: true
-    subscribe_to_news: false
-    perfil_description: ''
+#### Set default value
+
+    class User < ActiveRecord::Base
+      acts_as_configuration :config, :columns => {
+        :private_photos => {
+          :type => :boolean,
+          :default => true
+        }, :age => {
+          :type => :get_type,
+          :default => 1
+        }, :perfil_description => {
+          :type => lambda {
+            String
+          },
+          :default => :get_default_perfil_description
+        }, :last_loggin => {
+          :type => Time.now.class,
+          :default => lambda {
+            self.created_at.time
+          }
+        }, :subscribe_to_rss => :get_rss_config
+      }
+
+      protected
+      def get_type
+        Fixnum
+      end
+
+      def get_rss_config
+        {
+          :type => :boolean,
+          :default => true
+        }
+      end
+
+      def get_default_perfil_description
+        Description.where(:user_id => self.id).default
+      end
+    end
+
+#### Set validation
+    class User < ActiveRecord::Base
+      acts_as_configuration :config, :columns => {
+        :private_photos => {
+          :type => :boolean,
+          :default => true
+        }, :age => {
+          :type => :get_type,
+          :default => 1,
+          :validate => lambda {
+            |age|
+            errors.add :config_age, "You are Matusalén?" if age > 150
+            errors.add :config_age, "You're a fetus?" if age <= 0
+          }
+        }, :perfil_description => {
+          :type => lambda {
+            String
+          },
+          :default => :get_default_perfil_description,
+          :lambda => :must_not_have_strong_language
+        }, :last_loggin => {
+          :type => Time.now.class,
+          :default => lambda {
+            self.created_at.time
+          },
+          :validate => lambda {
+            |time|
+            errors.add :config_last_loggin, "You can't loggin in the future" if time > Time.now
+          }
+        }, :subscribe_to_rss => :get_rss_config
+      }
+
+      protected
+      STRONG_WORD = [
+        #...
+      ]
+      
+      def get_type
+        Fixnum
+      end
+
+      def get_rss_config
+        {
+          :type => :boolean,
+          :default => true
+        }
+      end
+
+      def get_default_perfil_description
+        Description.where(:user_id => self.id).default
+      end
+
+      def must_not_have_strong_language(desc)
+        errors.add :cofig_perfil_description, "You must not have strong language" if desc =~ /(#{STRONG_WORD.join('|')})/
+      end
+    end
