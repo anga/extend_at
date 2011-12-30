@@ -24,9 +24,9 @@ For example:
 
 Now you can write your configuration like:
 
-    user.configuration.private_photos = true
-    user.configuration.subscribe_to_news = false
-    user.configuration.perfil_description = ''
+    user.config.private_photos = true
+    user.config.subscribe_to_news = false
+    user.config.perfil_description = ''
     user.save
 
 ### Columns configuration
