@@ -11,7 +11,7 @@ module ExtendModelAt
     def initialize(options={})
       @model = options[:model]
       @column_name = options[:column_name].to_s
-      @columns = expand_options options[:columns], { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] }
+      @columns = options[:columns]
       @value = get_defaults_values options
 
       raise "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
@@ -26,7 +26,6 @@ module ExtendModelAt
 
       initialize_values
 
-      # Raise or not if fail?...
       @model.attributes[@column_name] = @value
       @model.save(:validate => false)
     end
@@ -44,10 +43,9 @@ module ExtendModelAt
       @model.send :"#{@column_name}=", @value.to_yaml
     end
 
-    # The "magic" happen here.
     # Use the undefined method as a column
     def method_missing(m, *args, &block)
-      # If the method don't finish in "=" is fore read
+      # If the method don't finish with "=" is fore read
       if m !~ /\=$/
         self[m.to_s]
       # but if finish with "=" is for wirte
@@ -73,60 +71,12 @@ module ExtendModelAt
       end
       defaults_
     end
-
-    # Only we accept strings as key
-    def transform_defaults(hash)
-      _hash = {}
-      hash.each do |key, value|
-        _hash[key.to_s] = value
-      end
-      _hash
-    end
-
-    def expand_options(options={}, opts={})
-      config_opts = {
-        :not_expand => [],
-        :not_call_symbol => []
-      }.merge! opts
-      if options.kind_of? Hash
-        opts = {}
-        options.each do |column, config|
-          if not config_opts[:not_expand].include? column.to_sym
-            if not config_opts[:not_call_symbol].include? config
-              opts[column.to_sym] = expand_options(get_value_of(config), config_opts)
-            else
-              opts[column.to_sym] = expand_options(config, config_opts)
-            end
-          else
-            opts[column.to_sym] = config
-          end
-        end
-        return opts
-      else
-        return get_value_of options
-      end
-    end
-
-    def get_value_of(value)
-      if value.kind_of? Symbol
-        # If the function exist, we execute it
-        if  @model.respond_to? value
-          return @model.send value
-        # if the the function not exist, whe set te symbol as a value
-        else
-          return value
-        end
-      elsif value.kind_of? Proc
-        return value.call
-      else
-        return value
-      end
-    end
   end
 
   module ClassMethods
     def extend_at(column_name, options = {})
       assign_attributes_eval = "
+      # Rewrite the mass assignment method because we need to accept write code like User.new :config_born => 10.years.ago
       def assign_attributes(attributes = nil, options = {})
         attributes.each_pair do |key, value|
           if key.to_s =~ /^#{column_name}_/
@@ -140,11 +90,43 @@ module ExtendModelAt
         super attributes, options
       end
 
-      def method_missing(m, *args, &block)
-        if m !~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=$/
-          rb = \"self.#{column_name}.\#\{m.to_s.gsub(/^#{column_name}_/, '')} = args.first\"
-          puts \"Evaluando #\{rb}\"
+      # Return the value of <<attributes>> methods like <column name>_<extended column name>
+      def [](column)
+        if column.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
+          rb = \"#{column_name}.\#\{column.to_s.gsub(/^#{column_name}_/,'')\}\"
           eval rb, binding
+        else
+          super
+        end
+      end
+
+      # Write the value of <<attributes>> methods like <column name>_<extended column name>
+      def []=(column, value)
+        if column.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
+          rb = \"#{column_name}.\#\{column\} = value\"
+          eval rb, binding
+        else
+          super
+        end
+      end
+
+      # Respond to ethod like <column name>_<extended column name> for read or write
+      def self.respond_to?(symbol, include_private=false)
+        if symbol.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
+          return true
+        else
+          super
+        end
+      end
+
+      # Accept method like <column name>_<extended column name> for read or write
+      def method_missing(m, *args, &block)
+        if m.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=$/
+          rb = \"self.#{column_name}.\#\{m.to_s.gsub(/^#{column_name}_/, '')} = args.first\"
+          return eval rb, binding
+        elsif m.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*$/
+          rb = \"self.#{column_name}.\#\{m.to_s.gsub(/^#{column_name}_/, '')}\"
+          return eval rb, binding
         else
           super
         end
@@ -165,7 +147,7 @@ module ExtendModelAt
             options = {
                 :extensible => true    # If is false, only the columns defined in :columns can be used
               }.merge! opts
-            columns = initialize_columns expand_options(options, { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] })
+            columns = initialize_columns expand_options(options, { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] }) if options.kind_of? Hash
             @#{column_name.to_s}_configuration ||= ExtendModelAt::Extention.new({:model => self, :column_name => :#{column_name.to_s}, :columns => columns})
           end
           @#{column_name.to_s}_configuration
@@ -173,6 +155,7 @@ module ExtendModelAt
 
       protected
         def extend_at_validations
+          self.#{column_name}.valid?
           @extend_at_validation ||= {} if not @extend_at_validation.kind_of? Hash
           @extend_at_validation.each do |column, validation|
             if validation.kind_of? Symbol
@@ -304,14 +287,7 @@ module ExtendModelAt
           end
         end
       EOV
-      
     end
-
-    
-
-    protected
-
-
   end
 end
 
