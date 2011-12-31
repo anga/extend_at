@@ -16,6 +16,8 @@ Only you need to add the next line in your model.
 
 <code>extend_at :configuration</code>
 
+The column <code>configuration</code> must be string or text.
+
 For example:
 
     class User < ActiveRecord::Base
@@ -206,3 +208,7 @@ If you like to do something more dynamic, like create columns and validations de
     end
 
 This code read the configuration of the columns when you acces to extra column
+
+## License
+
+This gem is under MIT license.
