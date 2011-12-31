@@ -8,7 +8,7 @@ This gem allows you to extend the columns from your model without migrations, yo
 
 ### Rails 3
 Add in your Gemfile:
-<code>gem 'extend_at', :git => 'git://github.com/anga/extend_at.git'</code>
+<code>gem 'extend_at'</code>
 
 ## Usage
 
