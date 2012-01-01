@@ -80,7 +80,7 @@ module ExtendModelAt
       def assign_attributes(attributes = nil, options = {})
         attributes.each_pair do |key, value|
           if key.to_s =~ /^#{column_name}_/
-            rb = \"#{column_name}.\#\{key.to_s.gsub(/^#{column_name}_/,'')\} = value\"
+            rb = \"self.#{column_name}.\#\{key.to_s.gsub(/^#{column_name}_/,'')\} = value\"
             eval rb, binding
           end
         end
@@ -93,7 +93,7 @@ module ExtendModelAt
       # Return the value of <<attributes>> methods like <column name>_<extended column name>
       def [](column)
         if column.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
-          rb = \"#{column_name}.\#\{column.to_s.gsub(/^#{column_name}_/,'')\}\"
+          rb = \"self.#{column_name}.\#\{column.to_s.gsub(/^#{column_name}_/,'').gsub(/\=$/, '')\}\"
           eval rb, binding
         else
           super
@@ -103,7 +103,8 @@ module ExtendModelAt
       # Write the value of <<attributes>> methods like <column name>_<extended column name>
       def []=(column, value)
         if column.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
-          rb = \"#{column_name}.\#\{column\} = value\"
+          rb = \"self.#{column_name}.\#\{column.to_s.gsub(/^#{column_name}_/,'').gsub(/\=$/, '')\} = value\"
+          puts \"Evaluando: #\{rb}\"
           eval rb, binding
         else
           super
@@ -122,7 +123,7 @@ module ExtendModelAt
       # Accept method like <column name>_<extended column name> for read or write
       def method_missing(m, *args, &block)
         if m.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=$/
-          rb = \"self.#{column_name}.\#\{m.to_s.gsub(/^#{column_name}_/, '')} = args.first\"
+          rb = \"self.#{column_name}.\#\{m.to_s.gsub(/^#{column_name}_/, '').gsub(/\=$/, '')} = args.first\"
           return eval rb, binding
         elsif m.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*$/
           rb = \"self.#{column_name}.\#\{m.to_s.gsub(/^#{column_name}_/, '')}\"

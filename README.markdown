@@ -24,11 +24,25 @@ For example:
       extend_at :extra
     end
 
-Now you can write your configuration like:
+Now you can create extra attributes:
 
     user.extra.private_photos = true
     user.extra.subscribe_to_news = false
     user.extra.perfil_description = ''
+    user.save
+
+Is the same:
+
+    user.extra_private_photos = true
+    user.extra_subscribe_to_news = false
+    user.extra_perfil_description = ''
+    user.save
+
+Or:
+
+    user[:extra_private_photos] = true
+    user[:extra_subscribe_to_news] = false
+    user[:extra_perfil_description] = ''
     user.save
 
 ### Columns configuration
