@@ -133,8 +133,8 @@ You can use any class, but if you need use boolean values, you must use :boolean
           :default => 1,
           :validate => lambda {
             |age|
-            errors.add :config_age, "Are you Matusalen?" if age > 150
-            errors.add :config_age, "Are you a fetus?" if age <= 0
+            errors.add :extra_age, "Are you Matusalen?" if age > 150
+            errors.add :extra_age, "Are you a fetus?" if age <= 0
           }
         }, :profile_description => {
           :type => lambda {
@@ -149,7 +149,7 @@ You can use any class, but if you need use boolean values, you must use :boolean
           },
           :validate => lambda {
             |time|
-            errors.add :config_last_loggin, "You can't loggin on the future" if time > Time.now
+            errors.add :extra_last_loggin, "You can't loggin on the future" if time > Time.now
           }
         }, :subscribe_to_rss => :get_rss_config
       }
@@ -181,7 +181,7 @@ You can use any class, but if you need use boolean values, you must use :boolean
 
 ### Integration in the views
 
-If you like to use some configuration variable in your views you only need put the name of the input like <code>:config_name</code>, for example:
+If you like to use some configuration variable in your views you only need put the name of the input like <code>:extra_name</code>, for example:
 
     <% form_for(@user) do |f| %>
       ...
