@@ -14,9 +14,9 @@ Add in your Gemfile:
 
 Only you need to add the next line in your model.
 
-<code>extend_at :configuration</code>
+<code>extend_at :extra</code>
 
-The column <code>configuration</code> must be string or text.
+The column <code>extra</code> must be string or text.
 
 For example:
 
