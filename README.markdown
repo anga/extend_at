@@ -1,6 +1,6 @@
 # Extend at
 
-This gem allows you to extend the columns from your model without migrations, you can, i.e., develop your own content types, like in Drupal
+This gem allows you to extend models without migrations: This way you can, i.e., develop your own content types, like in Drupal.
 
 ## Installation
 
@@ -12,7 +12,7 @@ Add in your Gemfile:
 
 ## Usage
 
-Only you need to add the next line in your model.
+You only need to add the next line in your model.
 
 <code>extend_at :extra</code>
 
@@ -28,30 +28,30 @@ Now you can create extra attributes:
 
     user.extra.private_photos = true
     user.extra.subscribe_to_news = false
-    user.extra.perfil_description = ''
+    user.extra.profile_description = ''
     user.save
 
-Is the same:
+This is the same:
 
     user.extra_private_photos = true
     user.extra_subscribe_to_news = false
-    user.extra_perfil_description = ''
+    user.extra_profile_description = ''
     user.save
 
 Or:
 
     user[:extra_private_photos] = true
     user[:extra_subscribe_to_news] = false
-    user[:extra_perfil_description] = ''
+    user[:extra_profile_description] = ''
     user.save
 
 ### Columns configuration
 
-You can configurate each column.
+You can configure each column.
 
 #### Set column type
 
-You can set the type of the colum.
+You can set the colum's type.
 
     class User < ActiveRecord::Base
       extend_at :extra, :columns => {
@@ -59,7 +59,7 @@ You can set the type of the colum.
           :type => :boolean
         }, :age => {
           :type => :get_type
-        }, :perfil_description => {
+        }, :profile_description => {
           :type => lambda {
             String
           }
@@ -92,11 +92,11 @@ You can use any class, but if you need use boolean values, you must use :boolean
         }, :age => {
           :type => :get_type,
           :default => 1
-        }, :perfil_description => {
+        }, :profile_description => {
           :type => lambda {
             String
           },
-          :default => :get_default_perfil_description
+          :default => :get_default_profile_description
         }, :last_loggin => {
           :type => Time.now.class,
           :default => lambda {
@@ -117,7 +117,7 @@ You can use any class, but if you need use boolean values, you must use :boolean
         }
       end
 
-      def get_default_perfil_description
+      def get_default_profile_description
         Description.where(:user_id => self.id).default
       end
     end
@@ -133,15 +133,15 @@ You can use any class, but if you need use boolean values, you must use :boolean
           :default => 1,
           :validate => lambda {
             |age|
-            errors.add :config_age, "Are you Matusalén?" if age > 150
+            errors.add :config_age, "Are you Matusalen?" if age > 150
             errors.add :config_age, "Are you a fetus?" if age <= 0
           }
-        }, :perfil_description => {
+        }, :profile_description => {
           :type => lambda {
             String
           },
-          :default => :get_default_perfil_description,
-          :lambda => :must_not_have_strong_language
+          :default => :get_default_profile_description,
+          :lambda => :must_not_use_strong_language
         }, :last_loggin => {
           :type => Time.now.class,
           :default => lambda {
@@ -149,7 +149,7 @@ You can use any class, but if you need use boolean values, you must use :boolean
           },
           :validate => lambda {
             |time|
-            errors.add :config_last_loggin, "You can't loggin in the future" if time > Time.now
+            errors.add :config_last_loggin, "You can't loggin on the future" if time > Time.now
           }
         }, :subscribe_to_rss => :get_rss_config
       }
@@ -170,18 +170,18 @@ You can use any class, but if you need use boolean values, you must use :boolean
         }
       end
 
-      def get_default_perfil_description
+      def get_default_profile_description
         Description.where(:user_id => self.id).default
       end
 
-      def must_not_have_strong_language(desc)
-        errors.add :cofig_perfil_description, "You must not have strong language" if desc =~ /(#{STRONG_WORD.join('|')})/
+      def must_not_use_strong_language(desc)
+        errors.add :cofig_profile_description, "You must not use strong language" if desc =~ /(#{STRONG_WORD.join('|')})/
       end
     end
 
 ### Integration in the views
 
-If you like to use come configuration variable in your views you only need put the name of the input like <code>:config_name</code>, for example:
+If you like to use some configuration variable in your views you only need put the name of the input like <code>:config_name</code>, for example:
 
     <% form_for(@user) do |f| %>
       ...
@@ -194,7 +194,7 @@ If you like to use come configuration variable in your views you only need put t
 
 ### Tips
 
-If you like to do something more dynamic, like create columns and validations depending of some model or configuration, the you can do something like this:
+If you like to do something more dynamic, like create columns and validations depending of some model or configuration, then you can do something like this:
 
     class User < ActiveRecord::Base
       extend_at :extra, :columns => :get_columns
@@ -221,7 +221,11 @@ If you like to do something more dynamic, like create columns and validations de
       end
     end
 
-This code read the configuration of the columns when you acces to extra column
+This code read the configuration of the columns when you access to the extra column.
+
+## Bugs, recomendation, etc
+
+If you found a bug, create an issue. If you have a recomendation, idea, etc., create a request or fork the project.
 
 ## License
 

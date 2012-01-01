@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Andrés José Borek"]
   s.email       = ["andres.b.dev@gmail.com"]
   s.homepage    = ""
-  s.summary     = %q{Create dynamic fields in your models (like content types in Drupal)}
-  s.description = %q{This gem allows you to extend the columns from your model without migrations, you can, i.e., develop your own content types, like in Drupal}
+  s.summary     = %q{Create dynamic fields to extend models (like content types in Drupal)}
+  s.description = %q{This gem allows you to extend models without migrations: This way you can, i.e., develop your own content types, like in Drupal.}
 
   s.rubyforge_project = "extend_at"
 
