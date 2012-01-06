@@ -13,6 +13,7 @@ module ExtendModelAt
       @column_name = options[:column_name].to_s
       @columns = options[:columns]
       @value = get_defaults_values options
+      @model_manager = ExtendModelAt::ModelManager.new(@column_name, @model)
 
       raise "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
 
@@ -27,7 +28,7 @@ module ExtendModelAt
       initialize_values
 
       @model.attributes[@column_name] = @value
-      @model.save(:validate => false)
+#       @model.save(:validate => false)
     end
 
     def [](key)
@@ -37,10 +38,22 @@ module ExtendModelAt
     def []=(key, value)
       if @columns[key.to_sym].kind_of? Hash and ((@columns[key.to_sym][:type] == :boolean and (not [true.class, false.class].include? value.class)) or
           ((not [:boolean, nil].include?(@columns[key.to_sym][:type])) and @columns[key.to_sym][:type] != value.class ))
-        raise "#{value.inspect} is not a valid type, expected #{@columns[key.to_sym][:type]}"
+        # Try to adapt the value
+        adapter = get_adapter key, value
+        raise "#{value.inspect} is not a valid type, expected #{@columns[key.to_sym][:type]}" if adapter.nil? # We can't adapt the value
+        value = value.send adapter
       end
       @value[key.to_s] = value
-      @model.send :"#{@column_name}=", @value.to_yaml
+      @model_manager.assign(key,value)
+#       @model.send :"#{@column_name}=", @value.to_yaml
+    end
+
+    def self.respond_to?(symbol, include_private=false)
+      true
+    end
+
+    def respond_to?(symbol, include_private=false)
+      true
     end
 
     # Use the undefined method as a column
@@ -56,6 +69,21 @@ module ExtendModelAt
     end
 
     private
+
+    def get_adapter(column, value)
+      if @columns[column.to_sym][:type] == String
+        return :to_s
+      elsif @columns[column.to_sym][:type] == Fixnum
+        return :to_i if value.respond_to? :to_i
+      elsif @columns[column.to_sym][:type] == Float
+        return :to_f if value.respond_to? :to_f
+      elsif @columns[column.to_sym][:type] == Time
+        return :to_time if value.respond_to? :to_time
+      elsif @columns[column.to_sym][:type] == Date
+        return :to_date if value.respond_to? :to_date
+      end
+      nil
+    end
 
     def initialize_values
       if not @value.kind_of? Hash
@@ -113,6 +141,15 @@ module ExtendModelAt
 
       # Respond to ethod like <column name>_<extended column name> for read or write
       def self.respond_to?(symbol, include_private=false)
+        if symbol.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
+          return true
+        else
+          super
+        end
+      end
+
+      # Respond to ethod like <column name>_<extended column name> for read or write
+      def respond_to?(symbol, include_private=false)
         if symbol.to_s =~ /^#{column_name}_[a-zA-Z_][a-zA-Z_0-9]*\=?$/
           return true
         else
@@ -199,15 +236,10 @@ module ExtendModelAt
           if config[:type].class == Class
             # If exist :type, is a static column
             column_config[:type] = config[:type]
+          elsif config[:type].class == Symbol
+            column_config[:type] = get_type_from_symbol config[:type]
           else
-            # if not, is a dynamic column
-            if config[:type].to_sym == :any
-              column_config[:type] = nil
-            elsif config[:type].to_sym == :boolean
-              column_config[:type] = :boolean
-            else
-              raise "\#\{config[:type]\} is not a valid column type"
-            end
+            raise "\#\{config[:type]\} is not a valid column type"
           end
 
           # Stablish the default value
@@ -240,6 +272,18 @@ module ExtendModelAt
 
 
           column_config
+        end
+
+        def get_type_from_symbol(type)
+          type = type.to_s
+          return nil if type == 'any' or type == ''
+          return :boolean if type == 'boolean'
+          return Float if type == 'float'
+          return Fixnum if type == 'integer'
+          return String if type == 'string' or type == 'text'
+          return Time if type == 'time' or type == 'timestamp'
+          return Date if type == 'date' or type == 'datetime'
+          return eval type.classify
         end
 
         def create_validation_for(column, validation)
