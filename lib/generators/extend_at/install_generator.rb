@@ -1,6 +1,9 @@
+require 'rails/generators'
+require 'rails/generators/base'
+
 module ExtendAt
   module Generators
-    class InstallGenerator < Rails::Generators::Base
+    class InstallGenerator < Rails::Generators::NamedBase
       include Rails::Generators::Migration
       source_root File.expand_path('../templates', __FILE__)
       desc "Generate all necesaries models and migrations for extend_at gem"
