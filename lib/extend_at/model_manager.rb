@@ -1,11 +1,14 @@
+require File.expand_path('../models/all', __FILE__)
+
 module ExtendModelAt
   class ModelManager
     def initialize(column_name,model, config)
       @column_name, @model, @config = column_name, model, config
+      puts "config: #{@config}"
     end
 
     def assign(column,value)
-      raise "#{value} is not valid" if value.class != @config[column.to_sym][:type]
+      raise "#{value} is not valid" if @config[column.to_sym].kind_of? Hash and value.class != @config[column.to_sym][:type]
       
       last_model = get_column_model column
       type_class = get_type_class @config[column.to_sym][:type]
@@ -24,22 +27,31 @@ module ExtendModelAt
     end
 
     def get_value(column)
-      model = get_column_model column, @config[column.to_sym][:type]
+      model = get_column_model column, get_type(column)
       model.value
     end
 
     protected
     def get_column_model(column)
-      type_class = get_type_class @config[column.to_sym][:type]
-      eval "#{type_class}.where(
-        #{type_class}.arel_table[:column].eq(column).and(
-          #{type_class}.arel_table[:extend_at_column_id].in(
-            Column.arel_table.project(:id).where(
-              Column.arel_table[:extend_at_id].eq(@extend_at.id)
+      type = get_type column
+      type_class = get_type_class type
+      eval "::#{type_class}.where(
+        ::#{type_class}.arel_table[:column].eq(column).and(
+          ::#{type_class}.arel_table[:extend_at_column_id].in(
+            ::Column.arel_table.project(:id).where(
+              ::Column.arel_table[:extend_at_id].eq(@extend_at.id)
             )
           )
         )
       ).try(:first)"
+    end
+
+    def get_type(column)
+      if @config[column.to_sym].kind_of? Hash
+         @config[column.to_sym][:type]
+      else
+        nil
+      end
     end
 
     def get_type_class(type)

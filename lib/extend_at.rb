@@ -1,5 +1,7 @@
 # encoding: utf-8
 require "extend_at/version"
+require "extend_at/model_manager"
+require "extend_at/models/all"
 
 module ExtendModelAt
   def self.included(base)
@@ -13,7 +15,8 @@ module ExtendModelAt
       @column_name = options[:column_name].to_s
       @columns = options[:columns]
       @value = get_defaults_values options
-      @model_manager = ExtendModelAt::ModelManager.new(@column_name, @model)
+      puts "columns: #{@columns}"
+      @model_manager = ::ExtendModelAt::ModelManager.new(@column_name, @model, @columns)
 
       raise "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
 
