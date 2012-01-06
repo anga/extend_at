@@ -1,0 +1,8 @@
+Description:
+    Install extend_at gem
+
+Example:
+    rails generate extend_at Thing
+
+    This will create:
+        db/migrate/extend_at_tables.rb
