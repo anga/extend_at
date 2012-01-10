@@ -19,7 +19,7 @@ This will generate one migration with all necessary tables.
 
 ## Usage
 
-You don't need an extra column in your model.
+You don't need an extra column in your model. Only you need is put next code in your model.
 
 <code>extend_at :extra</code>
 
