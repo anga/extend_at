@@ -4,7 +4,7 @@ This gem allows you to extend models without migrations: This way you can, i.e.,
 
 ## NOTE:
 
-Incompatible with previous versions
+Incompatible with previous versions.
 
 ## Installation
 
