@@ -2,6 +2,10 @@
 
 This gem allows you to extend models without migrations: This way you can, i.e., develop your own content types, like in Drupal.
 
+## NOTE:
+
+Incompatible with previous versions.
+
 ## Installation
 
 <code>gem install extend_at</code>
