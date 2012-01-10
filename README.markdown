@@ -8,11 +8,18 @@ This gem allows you to extend models without migrations: This way you can, i.e.,
 
 ### Rails 3
 Add in your Gemfile:
+
 <code>gem 'extend_at'</code>
+
+After that, you need execute:
+
+<code>rails generate extend_at:install</code>
+
+This will generate one migration with all necesaries tables.
 
 ## Usage
 
-You only need to add the next line in your model.
+You don't need an extra column in your model.
 
 <code>extend_at :extra</code>
 
@@ -79,6 +86,33 @@ You can set the colum's type.
         }
       end
     end
+
+##### Valid types
+
+Valid symbols:
+
+* <code>:any</code>
+* <code>:binary</code>
+* <code>:boolean</code>
+* <code>:date</code>
+* <code>:datetime</code>
+* <code>:decimal</code>
+* <code>:float</code>
+* <code>:integer</code>
+* <code>:string</code>
+* <code>:text</code>
+* <code>:time</code>
+* <code>:timestamp</code>
+
+But you can use classes.
+
+* Float: <code>:any</code>
+* Fixnum: <code>:integer</code>
+* String: <code>:text</code>
+* Time: <code>:timestamp</code>
+* Date: <code>:datetime</code>
+
+Else, return <code>:any</code>
 
 You can use any class, but if you need use boolean values, you must use :boolean.
 
@@ -179,6 +213,25 @@ You can use any class, but if you need use boolean values, you must use :boolean
       end
     end
 
+### Scopes
+
+You can use scope like:
+
+    User.extra_last_loggin_gt_eq(1.week.ago).extra_age_gt_eq(18).where(:column => "value").all
+
+Valid scopes:
+
+    <extention>_<column_name>_<comparation>
+
+Comparations:
+
+* lt
+* lt_eq
+* eq
+* gt_eq
+* gt
+* match
+
 ### Integration in the views
 
 If you like to use some configuration variable in your views you only need put the name of the input like <code>:extra_name</code>, for example:
@@ -226,6 +279,11 @@ This code read the configuration of the columns when you access to the extra col
 ## Bugs, recomendation, etc
 
 If you found a bug, create an issue. If you have a recomendation, idea, etc., create a request or fork the project.
+
+## TODO:
+
+* RSpec test
+* Support static columns
 
 ## License
 

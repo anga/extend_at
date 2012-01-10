@@ -1,4 +1,4 @@
-class ExtendAtTables < ActiveRecord::Migration
+class CreateExtendAtTables < ActiveRecord::Migration
   def up
     create_table :extend_at_strings do |t|
       t.belongs_to :extend_at_column
@@ -83,11 +83,20 @@ class ExtendAtTables < ActiveRecord::Migration
   end
 
   def down
-    drop_table :extend_at
-    drop_table :extend_at_integers
-    drop_table :extend_at_floats
     drop_table :extend_at_strings
     drop_table :extend_at_texts
+    drop_table :extend_at_integers
+    drop_table :extend_at_floats
+    drop_table :extend_at_decimals
+    drop_table :extend_at_datetimes
+    drop_table :extend_at_timestamps
+    drop_table :extend_at_times
+    drop_table :extend_at_dates
+    drop_table :extend_at_binaries
+    drop_table :extend_at_booleans
     drop_table :extend_at_anies
+
+    drop_table :extend_ats
+    drop_table :extend_at_columns
   end
 end
