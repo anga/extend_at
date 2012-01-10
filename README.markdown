@@ -15,15 +15,13 @@ After that, you need execute:
 
 <code>rails generate extend_at:install</code>
 
-This will generate one migration with all necesaries tables.
+This will generate one migration with all necessary tables.
 
 ## Usage
 
 You don't need an extra column in your model.
 
 <code>extend_at :extra</code>
-
-The column <code>extra</code> must be string or text.
 
 For example:
 
