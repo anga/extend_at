@@ -114,14 +114,16 @@ module ExtendModelAt
       equivalence_method = EQUIVALENCE_METHODS[method.to_s]
       "
       where(
-          ExtendAt.arel_table.project('model_id').where(
-            ExtendAt.arel_table[:model_type].eq(\"#{@model.class.name}\").and(
-              ExtendAt.arel_table[:id].in(
-                ::Column.arel_table.project('extend_at_id').where(
-                  ::Column.arel_table[:id].in(
-                    ::#{type_class}.arel_table.project('extend_at_column_id').where(
-                      ::#{type_class}.arel_table[:column].eq(column).and(
-                        ::#{type_class}.arel_table[:value].#{equivalence_method}(value)
+        ::#{@model.class.name}.arel_table[:id].in(
+            ExtendAt.arel_table.project('model_id').where(
+              ExtendAt.arel_table[:model_type].eq(\"#{@model.class.name}\").and(
+                ExtendAt.arel_table[:id].in(
+                  ::Column.arel_table.project('extend_at_id').where(
+                    ::Column.arel_table[:id].in(
+                      ::#{type_class}.arel_table.project('extend_at_column_id').where(
+                        ::#{type_class}.arel_table[:column].eq(column).and(
+                          ::#{type_class}.arel_table[:value].#{equivalence_method}(value)
+                        )
                       )
                     )
                   )

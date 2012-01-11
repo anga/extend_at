@@ -390,6 +390,7 @@ module ExtendModelAt
         def compatible_type(value,type)
           return true if value.class == String and [:string, :text, :binary].include? type
           return true if value.class == Fixnum and [:integer, :float].include? type
+          return true if [Fixnum, Float].include? value.class and [:integer, :float].include? type
           return true if [true.class, false.class].include? value.class and [:boolean].include? type
           return true if value.class == BigDecimal and [:decimal].include? type
           return true if [Date, Time].include? value.class and [:date, :time].include? type
