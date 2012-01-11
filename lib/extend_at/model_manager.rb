@@ -40,11 +40,27 @@ module ExtendModelAt
       model.try(:value)
     end
 
-    def all
+    def each()
+      array = []
+      if yield.parameters.size == 1
+        all_values.each do |value|
+          array << yield value
+        end
+      elsif yield.parameters.size == 2
+        all_hash.each do |key, value|
+          array << yield key, value
+        end
+      else
+        raise "Invalid numbers of parameters"
+      end
+      array
+    end
+
+    def all_values
       @extend_at.extend_at_columns.map(&:column).try(:map,&:value)
     end
 
-    def all_columns_name
+    def all_names
       @extend_at.extend_at_columns.map(&:column).try(:map,&:column)
     end
 
@@ -55,6 +71,14 @@ module ExtendModelAt
         hash[column.column] = column.value
       end
       hash
+    end
+
+    def to_a
+      all_values
+    end
+
+    def to_hash
+      all_hash
     end
 
     protected

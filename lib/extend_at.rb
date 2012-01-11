@@ -56,12 +56,12 @@ module ExtendModelAt
       true
     end
 
-    def all
-      @model_manager.all
+    def all_values
+      @model_manager.all_values
     end
 
-    def all_columns_name
-      @model_manager.all_columns_name
+    def all_names
+      @model_manager.all_names
     end
 
     def all_hash
