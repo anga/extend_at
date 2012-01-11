@@ -26,6 +26,7 @@ module ExtendModelAt
         new_value = #{type_class}.new(:column => column, :value => value, :extend_at_column_id => new_column.id)
         new_value.save
         new_column.column_id = new_value.id
+        new_column.column_type = new_value.class.name
         new_column.save
         "
       else
@@ -37,6 +38,23 @@ module ExtendModelAt
     def get_value(column)
       model = get_column_model column #, get_type(column)
       model.try(:value)
+    end
+
+    def all
+      @extend_at.extend_at_columns.map(&:column).try(:map,&:value)
+    end
+
+    def all_columns_name
+      @extend_at.extend_at_columns.map(&:column).try(:map,&:column)
+    end
+
+    def all_hash
+      columns = @extend_at.extend_at_columns.map(&:column)
+      hash = {}
+      columns.each do |column|
+        hash[column.column] = column.value
+      end
+      hash
     end
 
     protected

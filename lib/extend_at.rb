@@ -56,6 +56,18 @@ module ExtendModelAt
       true
     end
 
+    def all
+      @model_manager.all
+    end
+
+    def all_columns_name
+      @model_manager.all_columns_name
+    end
+
+    def all_hash
+      @model_manager.all_hash
+    end
+
     # Use the undefined method as a column
     def method_missing(m, *args, &block)
       # If the method don't finish with "=" is fore read

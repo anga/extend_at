@@ -247,6 +247,10 @@ If you like to use some configuration variable in your views you only need put t
       ...
     <% end %>
 
+### More
+
+For more documentation go to [wiki](https://github.com/anga/extend_at/wiki "extend_at wiki").
+
 ### Tips
 
 If you like to do something more dynamic, like create columns and validations depending of some model or configuration, then you can do something like this:
