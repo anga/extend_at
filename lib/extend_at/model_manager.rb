@@ -17,38 +17,42 @@ module ExtendModelAt
       raise "#{value} is not valid" if not @model.send(:valid_type?, value, @config[column.to_sym].try(:[], :type))
       
       last_model = get_column_model column
-      type_class = get_type_class @config[column.to_sym].try(:[], :type)
+      type_class = get_type_class( (@config[column.to_sym].try(:[], :type) || :any) )
+
 
       if last_model.nil?
-        eval "
         new_column = Column.new :extend_at_id => @extend_at.id
         new_column.save
-        new_value = #{type_class}.new(:column => column, :value => value, :extend_at_column_id => new_column.id)
+        new_value = eval "#{type_class}.new(:column => column, :value => value, :extend_at_column_id => new_column.id)"
         new_value.save
         new_column.column_id = new_value.id
         new_column.column_type = new_value.class.name
         new_column.save
-        "
       else
-        eval "last_model.value = value
-        last_model.save"
+        last_model.value = value
+        last_model.save
       end
     end
 
     def get_value(column)
       model = get_column_model column #, get_type(column)
-      model.try(:value)
+      value = model.try(:value)
+      if value.nil?
+        value = @config[column.to_sym].try(:[], :default)
+        assign column, value
+      end
+      value
     end
 
     def each()
       array = []
       if yield.parameters.size == 1
         all_values.each do |value|
-          array << yield value
+          array << yield(value)
         end
       elsif yield.parameters.size == 2
         all_hash.each do |key, value|
-          array << yield key, value
+          array << yield(key, value)
         end
       else
         raise "Invalid numbers of parameters"
@@ -100,7 +104,7 @@ module ExtendModelAt
       if @config[column.to_sym].kind_of? Hash
          @config[column.to_sym][:type]
       else
-        nil
+        :any
       end
     end
 

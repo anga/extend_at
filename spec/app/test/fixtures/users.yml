@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/Fixtures.html
+
+one:
+  name: MyString
+  private_info: MyText
+  public_info: MyText
+  configuration: MyText
+
+two:
+  name: MyString
+  private_info: MyText
+  public_info: MyText
+  configuration: MyText

@@ -21,4 +21,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'rails', '~> 3.1'
   s.add_development_dependency "rspec", '~> 2.5'
   s.add_development_dependency "rspec-core"
+  s.add_development_dependency "database_cleaner", "~> 0.7"
+  
 end

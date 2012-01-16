@@ -11,12 +11,6 @@ class ExtendAt::InstallGenerator < Rails::Generators::Base
   end
 
   def create_model_file
-#         template "models/integer_value.rb", "app/models/integer_value.rb"
-#         template "models/float_value.rb", "app/models/float_value.rb"
-#         template "models/string_value.rb", "app/models/string_value.rb"
-#         template "models/text_value.rb", "app/models/text_value.rb"
-#         template "models/any_value.rb", "app/models/any_value.rb"
-#         template "models/column.rb", "app/models/column.rb"
     migration_template "create_extend_at_tables.rb", "db/migrate/create_extend_at_tables.rb"
   end
 end

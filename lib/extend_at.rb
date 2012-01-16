@@ -19,18 +19,7 @@ module ExtendModelAt
 
       raise "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
 
-      out = YAML.parse(@model[@column_name].to_s)
-      if out == false
-        db_value = nil
-      else
-        db_value = out.to_ruby
-      end
-      @value.merge! db_value if db_value.kind_of? Hash
-
       initialize_values
-
-
-      @model.attributes[@column_name] = @value
     end
 
     def [](key)
@@ -224,34 +213,33 @@ module ExtendModelAt
         eval assign_attributes_eval
       EOS
       
-      class_eval <<-EOV
+      class_eval do
       public
         validate :extend_at_validations
         after_save :update_model_manager, :on => :create
-        
-        def #{column_name.to_s}
-          if not @#{column_name.to_s}_configuration.kind_of? ExtendModelAt::Extention
-            opts = initialize_options(#{options})
+
+        define_method(column_name.to_s) do
+          if not @extend_at_configuration.kind_of? ExtendModelAt::Extention
+            opts = initialize_options(options)
             options = {
                 :extensible => true    # If is false, only the columns defined in :columns can be used
               }.merge!(opts)
             columns = initialize_columns expand_options(options, { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] }) if options.kind_of? Hash
-            @#{column_name.to_s}_configuration ||= ExtendModelAt::Extention.new({:model => self, :column_name => :#{column_name.to_s}, :columns => columns})
+            @extend_at_configuration ||= ExtendModelAt::Extention.new({:model => self, :column_name => column_name.to_sym, :columns => columns})
           end
-          @#{column_name.to_s}_configuration
+          @extend_at_configuration
         end
 
       protected
-        VALID_SYMBOLS = [:any, :binary, :boolean, :date, :datetime, :decimal, :float, :integer, :string, :text, :time, :timestamp]
       
         def extend_at_validations
-          self.#{column_name}.valid?
+#           @extend_at_configuration.valid?
           @extend_at_validation ||= {} if not @extend_at_validation.kind_of? Hash
           @extend_at_validation.each do |column, validation|
             if validation.kind_of? Symbol
-              self.send validation, eval("@#{column_name.to_s}_configuration.\#\{column.to_s\}")
+              self.send validation, eval("@extend_at_configuration.\#\{column.to_s\}", binding)
             elsif validation.kind_of? Proc
-              validation.call @#{column_name.to_s}_configuration[column.to_sym]
+              validation.call @extend_at_configuration[column.to_sym]
             end
           end
         end
@@ -281,6 +269,9 @@ module ExtendModelAt
 
         def initialize_column(column,config={})
           raise "The column \#\{column\} have an invalid configuration (\#\{config.class\} => \#\{config\})" if not config.kind_of? Hash
+          
+          @VALID_SYMBOLS ||= [:any, :binary, :boolean, :date, :datetime, :decimal, :float, :integer, :string, :text, :time, :timestamp]
+          
           column = column.to_sym
           column_config = {}
 
@@ -288,8 +279,10 @@ module ExtendModelAt
           if config[:type].class == Class
             # If exist :type, is a static column
             column_config[:type] = get_type_for_class config[:type]
-          elsif config[:type].class == Symbol and VALID_SYMBOLS.include? config[:type]
+          elsif config[:type].class == Symbol and @VALID_SYMBOLS.include? config[:type]
             column_config[:type] = config[:type]
+          elsif [Symbol, Proc].include? config[:type]
+            column_config[:type] = get_value_of config[:type]
           else
             raise "\#\{config[:type]\} is not a valid column type"
           end
@@ -385,7 +378,7 @@ module ExtendModelAt
         end
 
         def update_model_manager
-          self.#{column_name}.send :update_model_manager
+          @extend_at_configuration.send :update_model_manager
         end
 
         def get_type_for_class(type)
@@ -418,7 +411,7 @@ module ExtendModelAt
           (type == :boolean and ([true.class, false.class].include? value.class)) or
           ((not [:boolean, nil].include?(type)) and not value.nil? and compatible_type(value, type))
         end
-      EOV
+      end
     end
   end
 end
