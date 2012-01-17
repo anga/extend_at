@@ -6,10 +6,6 @@ This gem allows you to extend models without migrations: This way you can, i.e.,
 
 [![Build Status](https://secure.travis-ci.org/anga/extend_at.png)](http://travis-ci.org/anga/extend_at)
 
-## NOTE:
-
-Incompatible with previous versions.
-
 ## Installation
 
 <code>gem install extend_at</code>
