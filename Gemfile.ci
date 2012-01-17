@@ -1,0 +1,10 @@
+case ENV['DB']
+  when "sqlite"; gem "sqlite3" 
+end
+
+def gem(*args)
+  super unless %w(pg sqlite3).include?(args.first)
+end
+
+# Eval Gemfile
+eval(IO.read(File.join(File.dirname(__FILE__), 'Gemfile')), binding) 
