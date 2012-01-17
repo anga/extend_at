@@ -2,6 +2,10 @@
 
 This gem allows you to extend models without migrations: This way you can, i.e., develop your own content types, like in Drupal.
 
+## Status:
+
+[![Build Status](https://secure.travis-ci.org/anga/extend_at.png)](http://travis-ci.org/anga/extend_at)
+
 ## NOTE:
 
 Incompatible with previous versions.
@@ -115,8 +119,6 @@ But you can use classes.
 * Date: <code>:datetime</code>
 
 Else, return <code>:any</code>
-
-You can use any class, but if you need use boolean values, you must use :boolean.
 
 #### Set default value
 
