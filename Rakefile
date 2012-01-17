@@ -8,5 +8,5 @@ task :default => :spec
 task :test => :spec
 
 RSpec::Core::RakeTask.new(:spec) do
-  system "echo \"recreating database \" && cd #{File.join(File.dirname(__FILE__), 'spec', 'app')} && rake db:migrate:reset"
+  system "echo \"recreating database \" && cd #{File.join(File.dirname(__FILE__), 'spec', 'app')} && bundle install && rake db:migrate:reset"
 end 
