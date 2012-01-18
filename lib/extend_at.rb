@@ -8,16 +8,24 @@ module ExtendModelAt
     base.extend(ClassMethods)
   end
 
+  # Errors
+  class InvalidColumn < Exception
+  end
+
+  class ArgumentError < Exception
+  end
+
   # The object how controll the data
   class Extention
     def initialize(options={})
+      @static = options[:static] || false
       @model = options[:model]
       @column_name = options[:column_name].to_s
       @columns = options[:columns]
       @value = get_defaults_values options
       @model_manager = ::ExtendModelAt::ModelManager.new(@column_name, @model, @columns)
 
-      raise "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
+      raise ExtendModelAt::ArgumentError, "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
 
       initialize_values
     end
@@ -30,7 +38,7 @@ module ExtendModelAt
       if not valid_type? value, @columns[key.to_sym].try(:[],:type)
         # Try to adapt the value
         adapter = get_adapter key, value
-        raise "#{value.inspect} is not a valid type, expected #{@columns[key.to_sym][:type]}" if adapter.nil? # We can't adapt the value
+        raise ExtendModelAt::ArgumentError, "#{value.inspect} is not a valid type, expected #{@columns[key.to_sym][:type]}" if adapter.nil? # We can't adapt the value
         value = value.send adapter
       end
       @value[key.to_s] = value
@@ -59,12 +67,13 @@ module ExtendModelAt
 
     # Use the undefined method as a column
     def method_missing(m, *args, &block)
+      column_name = m.to_s.gsub(/\=$/, '')
+      raise ExtendModelAt::InvalidColumn, "#{column_name} not exist" if @static == true and not (@columns.try(:keys).try(:include?, column_name.to_sym) )
       # If the method don't finish with "=" is fore read
       if m !~ /\=$/
         self[m.to_s]
       # but if finish with "=" is for wirte
       else
-        column_name = m.to_s.gsub(/\=$/, '')
         self[column_name.to_s] = args.first
       end
     end
@@ -225,7 +234,7 @@ module ExtendModelAt
                 :extensible => true    # If is false, only the columns defined in :columns can be used
               }.merge!(opts)
             columns = initialize_columns expand_options(options, { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] }) if options.kind_of? Hash
-            @extend_at_configuration ||= ExtendModelAt::Extention.new({:model => self, :column_name => column_name.to_sym, :columns => columns})
+            @extend_at_configuration ||= ExtendModelAt::Extention.new({:model => self, :column_name => column_name.to_sym, :columns => columns, :static => options[:static]})
           end
           @extend_at_configuration
         end
@@ -239,7 +248,8 @@ module ExtendModelAt
             if validation.kind_of? Symbol
               self.send validation, eval("@extend_at_configuration.\#\{column.to_s\}", binding)
             elsif validation.kind_of? Proc
-              validation.call @extend_at_configuration[column.to_sym]
+              instance_exec @extend_at_configuration[column.to_sym], &validation
+#               validation.call @extend_at_configuration[column.to_sym]
             end
           end
         end
@@ -257,18 +267,18 @@ module ExtendModelAt
             end
           elsif options[:columns].kind_of? Symbol
             hash =  self.send options[:columns]
-            raise "Invalid columns configuration" if not hash.kind_of? Hash
+            raise ExtendModelAt::ArgumentError, "Invalid columns configuration" if not hash.kind_of? Hash
             columns = initialize_columns :columns => hash
           elsif options[:columns].kind_of? Proc
             hash = options[:columns].call
-            raise "Invalid columns configuration" if not hash.kind_of? Hash
+            raise ExtendModelAt::ArgumentError, "Invalid columns configuration" if not hash.kind_of? Hash
             columns = initialize_columns :columns => hash
           end
           columns
         end
 
         def initialize_column(column,config={})
-          raise "The column \#\{column\} have an invalid configuration (\#\{config.class\} => \#\{config\})" if not config.kind_of? Hash
+          raise ExtendModelAt::ArgumentError, "The column \#\{column\} have an invalid configuration (\#\{config.class\} => \#\{config\})" if not config.kind_of? Hash
           
           @VALID_SYMBOLS ||= [:any, :binary, :boolean, :date, :datetime, :decimal, :float, :integer, :string, :text, :time, :timestamp]
           
@@ -284,7 +294,7 @@ module ExtendModelAt
           elsif [Symbol, Proc].include? config[:type]
             column_config[:type] = get_value_of config[:type]
           else
-            raise "\#\{config[:type]\} is not a valid column type"
+            raise ExtendModelAt::ArgumentError, "\#\{config[:type]\} is not a valid column type"
           end
 
           # Stablish the default value
@@ -297,7 +307,7 @@ module ExtendModelAt
             # If the column have a type, we verify the type
             if not column_config[:type].nil?
               if not valid_type?(config[:default], column_config[:type])
-                  raise "The column \#\{column\} has an invalid default value. Expected \#\{column_config[:type]}, not \#\{config[:default].class}"
+                  raise ExtendModelAt::ArgumentError, "The column \#\{column\} has an invalid default value. Expected \#\{column_config[:type]}, not \#\{config[:default].class}"
               end
               column_config[:default] = config[:default]
             else
@@ -311,7 +321,7 @@ module ExtendModelAt
             column_config[:validate] = config[:validate]
             create_validation_for column, config[:validate]
           elsif not config[:validate].nil?
-            raise "The validation of \#\{column\} is invalid"
+            raise ExtendModelAt::ArgumentError, "The validation of \#\{column\} is invalid"
           end
 
 

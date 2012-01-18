@@ -56,5 +56,24 @@ describe 'extend_at' do
       article.extra.int2 = 10
       article.extra.int2.class.should == Fixnum
     end
+
+    it "should accept validate" do
+      article = Article.new :extra_int1 => -1
+      article.save
+      article.errors.keys.include?(:extra_int1).should == true
+    end
+
+    it "should support static columns" do
+      user = User.new :name => "Account"
+      lambda {user.private_info.etc = "etc"}.should raise_error(ExtendModelAt::InvalidColumn)
+    end
+
+    it "if is't static should support dynamic columns" do
+      article = Article.new
+      lambda {article.extra.etc = "etc"}.should_not raise_error(ExtendModelAt::InvalidColumn)
+      article.save :validate => false
+      article.reload
+      article.extra.etc.should == "etc"
+    end
   end
 end

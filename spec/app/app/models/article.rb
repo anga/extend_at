@@ -8,7 +8,7 @@ class Article < ActiveRecord::Base
       :type => :get_int1_type,
       :default => 1,
       :validate => lambda do |value|
-        errors.add :extra_int1, "Most by greater than 0" if value <= 0
+        self.errors.add :extra_int1, "Most by greater than 0" if value <= 0
       end
     },
     :int2 => :get_int2_config

@@ -12,5 +12,5 @@ class User < ActiveRecord::Base
         :type => Time
       }
     }
-  end)
+  end), :static => true
 end
