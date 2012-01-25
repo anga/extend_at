@@ -62,7 +62,9 @@ describe 'extend_at' do
       article.save
       article.errors.keys.include?(:extra_int1).should == true
     end
+  end
 
+  context "general options" do
     it "should support static columns" do
       user = User.new :name => "Account"
       lambda {user.private_info.etc = "etc"}.should raise_error(ExtendModelAt::InvalidColumn)
@@ -76,4 +78,28 @@ describe 'extend_at' do
       article.extra.etc.should == "etc"
     end
   end
+
+#   context "associations support" do
+#     context "belongs_to" do
+#       it "simple usage" do
+#         box = Toolbox.new
+#         box.save
+#         box.extra.create_tool
+#         box.extra.tools.first.extra.toolbox.should == box
+#       end
+#     end
+# 
+#     context "has_many" do
+#       context "simple usage" do
+#         box = Toolbox.new
+#         box.save
+#         box.extra.create_tool
+#         box.extra.create_tool
+#         box.extra.create_tool
+#         box.extra.tools.class.should == Array
+#         box.extra.tools.size.should == 3
+#         box.extra.tools.first.extra.toolbox.should == box
+#       end
+#     end
+#   end
 end

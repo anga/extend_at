@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120110153027) do
+ActiveRecord::Schema.define(:version => 20120118200029) do
 
   create_table "articles", :force => true do |t|
     t.string   "title"
@@ -102,6 +102,18 @@ ActiveRecord::Schema.define(:version => 20120110153027) do
   create_table "extend_ats", :force => true do |t|
     t.integer "model_id"
     t.string  "model_type"
+  end
+
+  create_table "toolboxes", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "tools", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "users", :force => true do |t|

@@ -1,24 +1,23 @@
 require File.expand_path('../models/all', __FILE__)
+require File.expand_path('../configuration', __FILE__)
 
 module ExtendModelAt
   class ModelManager
     def initialize(column_name,model, config)
       @column_name, @model, @config = column_name, model, config
-
-      if not @model.new_record?
-        @extend_at = ExtendAt.find_by_model_id_and_model_type @model.id, @model.class.to_s
-      else
+      
+      @extend_at = ExtendAt.find_by_model_id_and_model_type @model.id, @model.class.to_s
+      if @extend_at.nil?
         @extend_at = ExtendAt.new
         @extend_at.save
       end
     end
 
     def assign(column,value)
-      raise "#{value} is not valid" if not @model.send(:valid_type?, value, @config[column.to_sym].try(:[], :type))
+      raise "#{value} is not valid" if not @model.send(:valid_type?, value, @config[:columns][column.to_sym].try(:[], :type))
       
       last_model = get_column_model column
-      type_class = get_type_class( (@config[column.to_sym].try(:[], :type) || :any) )
-
+      type_class = get_type_class( (@config[:columns][column.to_sym].try(:[], :type) || :any) )
 
       if last_model.nil?
         new_column = Column.new :extend_at_id => @extend_at.id
@@ -38,7 +37,7 @@ module ExtendModelAt
       model = get_column_model column #, get_type(column)
       value = model.try(:value)
       if value.nil?
-        value = @config[column.to_sym].try(:[], :default)
+        value = @config[:columns][column.to_sym].try(:[], :default)
         assign column, value
       end
       value
@@ -77,6 +76,10 @@ module ExtendModelAt
       hash
     end
 
+    def read_model(model_name, configuration,force_reload=false)
+      # TODO
+    end
+
     def to_a
       all_values
     end
@@ -101,8 +104,8 @@ module ExtendModelAt
     end
 
     def get_type(column)
-      if @config[column.to_sym].kind_of? Hash
-         @config[column.to_sym][:type]
+      if @config[:columns][column.to_sym].kind_of? Hash
+         @config[:columns][column.to_sym][:type]
       else
         :any
       end

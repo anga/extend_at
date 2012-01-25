@@ -5,6 +5,7 @@ This gem allows you to extend models without migrations: This way you can, i.e.,
 ## Status:
 
 [![Build Status](https://secure.travis-ci.org/anga/extend_at.png)](http://travis-ci.org/anga/extend_at)
+[![Still Maintained](http://stillmaintained.com/anga/extend_at.png)](http://stillmaintained.com/anga/extend_at)
 
 ## Installation
 
@@ -157,6 +158,7 @@ Else, return <code>:any</code>
     end
 
 #### Set validation
+
     class User < ActiveRecord::Base
       extend_at :extra, :columns => {
         :private_photos => {
@@ -212,6 +214,21 @@ Else, return <code>:any</code>
         errors.add :cofig_profile_description, "You must not use strong language" if desc =~ /(#{STRONG_WORD.join('|')})/
       end
     end
+
+### Static columns
+
+If you like to restrict the existent extended columns, you should use <code>:static => true</code>
+
+    class User < ActiveRecord::Base
+      extend_at :extra, :columns => {
+        :private_photos => {
+          :type => :boolean,
+          :default => true
+        }
+      }, :static => true
+    end
+
+Now, <code>User.extra</code> only accept <code>private_photos</code> column
 
 ### Scopes
 
@@ -283,11 +300,6 @@ This code read the configuration of the columns when you access to the extra col
 ## Bugs, recomendation, etc
 
 If you found a bug, create an issue. If you have a recomendation, idea, etc., create a request or fork the project.
-
-## TODO:
-
-* RSpec test
-* Support static columns
 
 ## License
 
