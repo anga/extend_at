@@ -1,3 +1,8 @@
 0.2.1:
   * Fixed some problems.
   * Internal functionality changed (preparing for association support like belongs_to)
+
+0.2.2:
+  * Some clean up code.
+  * Fixed problem: Validation not work when the extention is static
+  * Fixed proble: Models fail when save and the extention is not used (mass assignment).

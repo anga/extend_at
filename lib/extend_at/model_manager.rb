@@ -5,7 +5,7 @@ module ExtendModelAt
   class ModelManager
     def initialize(column_name,model, config)
       @column_name, @model, @config = column_name, model, config
-      
+
       @extend_at = ExtendAt.find_by_model_id_and_model_type @model.id, @model.class.to_s
       if @extend_at.nil?
         @extend_at = ExtendAt.new

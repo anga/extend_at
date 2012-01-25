@@ -9,6 +9,33 @@ describe 'extend_at' do
     article.extra.respond_to?(:last_name).should == true
   end
 
+  it 'without mass assignment should work' do
+    article = Article.new
+    article.save
+    article.extra.last_name = "Gonzales"
+    article.save
+    article.reload
+    article.extra.last_name.should == "Gonzales"
+
+    user = User.new
+    user.save
+    user.private_info.real_name = "Pedro"
+    user.save
+    user.reload
+    user.private_info.real_name.should == "Pedro"
+  end
+
+  it 'when is loaded, should load the extra information' do
+    article = Article.new :extra_name => 'Pedro', :extra_last_name => 'Gonzales'
+    article.extra.name.should == 'Pedro'
+    article.extra.last_name.should == 'Gonzales'
+    article.save
+
+    article = Article.last
+    article.extra.name.should == "Pedro"
+    article.extra.last_name.should == "Gonzales"
+  end
+
   it "mass assignment" do
     article = Article.new :extra_name => 'Pedro', :extra_last_name => 'Gonzales'
     article.extra.name.should == 'Pedro'

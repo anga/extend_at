@@ -19,11 +19,11 @@ module ExtendModelAt
   # The object how controll the data
   class Extention
     def initialize(options={})
-      @configuration = ExtendModelAt::Configuration.run options, options[:model]
-      @model_manager = ::ExtendModelAt::ModelManager.new(@column_name, @configuration[:model], @configuration)
+      @configuration = ExtendModelAt::Configuration.new.run options, options[:model].clone
+      @model_manager = ::ExtendModelAt::ModelManager.new(@configuration[:column_name].to_s, options[:model], @configuration)
 
       @static = @configuration[:static] || false
-      @model = @configuration[:model]
+      @model = @configuration[:model].clone
       @column_name = @configuration[:column_name].to_s
       @columns = @configuration[:columns]
       @value = get_defaults_values @configuration
@@ -87,8 +87,37 @@ module ExtendModelAt
       @configuration
     end
 
-#     def define_associationss
-#     end
+    def configuration=(value)
+      @configuration = value
+    end
+
+    def define_associationss
+      [:has_one, :has_many, :belongs_to].each do |relation|
+        eval <<-EOS
+          if @configuration.keys.include? :#{relation}
+            raise "Invalid #{relation} value" if not [Hash, Array, NilClass].include? @configuration[:#{relation}].class
+            # We nee an array of models, then, we 
+            if @configuration[:#{relation}].kind_of? Hash
+              list_models = @configuration[:#{relation}].keys
+            elsif @configuration[:#{relation}].kind_of? Array
+              list_models = @configuration[:#{relation}]
+            else
+              list_models = [@configuration[:#{relation}]]
+            end
+            list_models.each do |model|
+              define_method(model.to_sym) do |force_reload|
+                if @configuration[:#{relation}].kind_of? Hash
+                  config = @configuration[:#{relation}][model]
+                else
+                  config = {}
+                end
+                @model_manager.read_#{relation} model, @configuration[:#{relation}][model], force_reload
+              end
+            end
+          end
+        EOS
+      end
+    end
 
     def get_adapter(column, value)
       if @columns[column.to_sym][:type] == String
@@ -239,10 +268,9 @@ module ExtendModelAt
 
         define_method(column_name.to_s) do
           if not @extend_at_configuration.kind_of? ExtendModelAt::Extention
-            options[:model] = self
-            @extend_at_configuration ||= ExtendModelAt::Extention.new(options )
-            
-            initialize_columns @extend_at_configuration.send(:configuration)[:columns] if options.kind_of? Hash
+            options[:model] = self.clone
+            @extend_at_configuration = ExtendModelAt::Extention.new(options )
+            initialize_columns @extend_at_configuration.send(:configuration)[:columns] || {}
           end
           @extend_at_configuration
         end
@@ -261,11 +289,21 @@ module ExtendModelAt
           end
         end
 
+        def set_extend_at_validation(value={})
+          @extend_at_validation
+        end
+
+        def update_model_manager
+          @extend_at_configuration.send :update_model_manager if @extend_at_configuration.respond_to? :update_model_manager
+        end
+
         # Initialize each column configuration
         def initialize_columns(columns = {})
+            colunms_config = {}
             columns.each do |column, config|
-              initialize_column column, config
+              colunms_config[column.to_sym] = initialize_column column, config
             end
+            colunms_config
         end
 
         def initialize_column(column,config={})
@@ -305,7 +343,6 @@ module ExtendModelAt
             raise ExtendModelAt::ArgumentError, "The validation of \#\{column\} is invalid"
           end
 
-
           column_config
         end
 
@@ -322,13 +359,8 @@ module ExtendModelAt
         end
 
         def create_validation_for(column, validation)
-          column = column.to_sym
           @extend_at_validation ||= {}
           @extend_at_validation[column] = validation
-        end
-
-        def update_model_manager
-          @extend_at_configuration.send :update_model_manager if @extend_at_configuration.respond_to? :update_model_manager
         end
 
         def get_type_for_class(type)
@@ -355,12 +387,12 @@ module ExtendModelAt
         end
 
         def valid_type?(value, type)
-        type = type.to_s.to_sym
-        [:"", :any].include? type or
-          value.nil? or
-          (type == :boolean and ([true.class, false.class].include? value.class)) or
-          ((not [:boolean, nil].include?(type)) and not value.nil? and compatible_type(value, type))
-        end
+      type = type.to_s.to_sym
+      [:"", :any].include? type or
+        value.nil? or
+        (type == :boolean and ([true.class, false.class].include? value.class)) or
+        ((not [:boolean, nil].include?(type)) and not value.nil? and compatible_type value, type )
+    end
       end
     end
   end
