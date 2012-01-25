@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "extend_at/version"
+# require "extend_at/configuration"
 require "extend_at/model_manager"
 require "extend_at/models/all"
 
@@ -18,14 +19,16 @@ module ExtendModelAt
   # The object how controll the data
   class Extention
     def initialize(options={})
-      @static = options[:static] || false
-      @model = options[:model]
-      @column_name = options[:column_name].to_s
-      @columns = options[:columns]
-      @value = get_defaults_values options
-      @model_manager = ::ExtendModelAt::ModelManager.new(@column_name, @model, @columns)
+      @configuration = ExtendModelAt::Configuration.run options, options[:model]
+      @model_manager = ::ExtendModelAt::ModelManager.new(@column_name, @configuration[:model], @configuration)
 
-      raise ExtendModelAt::ArgumentError, "#{@column_name} should by text or string not #{options[:model].column_for_attribute(@column_name.to_sym).type}" if not [:text, :stiring].include? options[:model].column_for_attribute(@column_name.to_sym).type
+      @static = @configuration[:static] || false
+      @model = @configuration[:model]
+      @column_name = @configuration[:column_name].to_s
+      @columns = @configuration[:columns]
+      @value = get_defaults_values @configuration
+
+#       define_associations
 
       initialize_values
     end
@@ -79,6 +82,13 @@ module ExtendModelAt
     end
 
     private
+
+    def configuration
+      @configuration
+    end
+
+#     def define_associationss
+#     end
 
     def get_adapter(column, value)
       if @columns[column.to_sym][:type] == String
@@ -221,7 +231,7 @@ module ExtendModelAt
       self.class_eval <<-EOS
         eval assign_attributes_eval
       EOS
-      
+
       class_eval do
       public
         validate :extend_at_validations
@@ -229,18 +239,16 @@ module ExtendModelAt
 
         define_method(column_name.to_s) do
           if not @extend_at_configuration.kind_of? ExtendModelAt::Extention
-            opts = initialize_options(options)
-            options = {
-                :extensible => true    # If is false, only the columns defined in :columns can be used
-              }.merge!(opts)
-            columns = initialize_columns expand_options(options, { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] }) if options.kind_of? Hash
-            @extend_at_configuration ||= ExtendModelAt::Extention.new({:model => self, :column_name => column_name.to_sym, :columns => columns, :static => options[:static]})
+            options[:model] = self
+            @extend_at_configuration ||= ExtendModelAt::Extention.new(options )
+            
+            initialize_columns @extend_at_configuration.send(:configuration)[:columns] if options.kind_of? Hash
           end
           @extend_at_configuration
         end
 
       protected
-      
+
         def extend_at_validations
 #           @extend_at_configuration.valid?
           @extend_at_validation ||= {} if not @extend_at_validation.kind_of? Hash
@@ -249,39 +257,22 @@ module ExtendModelAt
               self.send validation, eval("@extend_at_configuration.\#\{column.to_s\}", binding)
             elsif validation.kind_of? Proc
               instance_exec @extend_at_configuration[column.to_sym], &validation
-#               validation.call @extend_at_configuration[column.to_sym]
             end
           end
-        end
-
-        def initialize_options(options={})
-          opts = expand_options options, { :not_call_symbol => [:boolean], :not_expand => [:validate, :default] }
         end
 
         # Initialize each column configuration
-        def initialize_columns(options = {})
-          columns = {}
-          if options[:columns].kind_of? Hash
-            options[:columns].each do |column, config|
-              columns[column] = initialize_column column, config
+        def initialize_columns(columns = {})
+            columns.each do |column, config|
+              initialize_column column, config
             end
-          elsif options[:columns].kind_of? Symbol
-            hash =  self.send options[:columns]
-            raise ExtendModelAt::ArgumentError, "Invalid columns configuration" if not hash.kind_of? Hash
-            columns = initialize_columns :columns => hash
-          elsif options[:columns].kind_of? Proc
-            hash = options[:columns].call
-            raise ExtendModelAt::ArgumentError, "Invalid columns configuration" if not hash.kind_of? Hash
-            columns = initialize_columns :columns => hash
-          end
-          columns
         end
 
         def initialize_column(column,config={})
           raise ExtendModelAt::ArgumentError, "The column \#\{column\} have an invalid configuration (\#\{config.class\} => \#\{config\})" if not config.kind_of? Hash
-          
+
           @VALID_SYMBOLS ||= [:any, :binary, :boolean, :date, :datetime, :decimal, :float, :integer, :string, :text, :time, :timestamp]
-          
+
           column = column.to_sym
           column_config = {}
 
@@ -291,29 +282,19 @@ module ExtendModelAt
             column_config[:type] = get_type_for_class config[:type]
           elsif config[:type].class == Symbol and @VALID_SYMBOLS.include? config[:type]
             column_config[:type] = config[:type]
-          elsif [Symbol, Proc].include? config[:type]
-            column_config[:type] = get_value_of config[:type]
           else
             raise ExtendModelAt::ArgumentError, "\#\{config[:type]\} is not a valid column type"
           end
 
-          # Stablish the default value
-          # if is a symbol, we execute the function from the model
-          if config[:default].kind_of? Symbol
-            column_config[:default] = self.send(:config[:default])
-          elsif config[:default].kind_of? Proc
-            column_config[:default] = config[:default].call
-          else
-            # If the column have a type, we verify the type
-            if not column_config[:type].nil?
-              if not valid_type?(config[:default], column_config[:type])
-                  raise ExtendModelAt::ArgumentError, "The column \#\{column\} has an invalid default value. Expected \#\{column_config[:type]}, not \#\{config[:default].class}"
-              end
-              column_config[:default] = config[:default]
-            else
-              # If is dynamic, only we set the default value
-              column_config[:default] = config[:default]
+          # If the column have a type, we verify the type
+          if not column_config[:type].nil?
+            if not valid_type?(config[:default], column_config[:type])
+                raise ExtendModelAt::ArgumentError, "The column \#\{column\} has an invalid default value. Expected \#\{column_config[:type]}, not \#\{config[:default].class}"
             end
+            column_config[:default] = config[:default]
+          else
+            # If is dynamic, only we set the default value
+            column_config[:default] = config[:default]
           end
 
           # Set the validation
@@ -346,49 +327,8 @@ module ExtendModelAt
           @extend_at_validation[column] = validation
         end
 
-        def expand_options(options={}, opts={})
-          options = get_value_of options
-          config_opts = {
-            :not_expand => [],
-            :not_call_symbol => []
-          }.merge! opts
-          if options.kind_of? Hash
-            opts = {}
-            options.each do |column, config|
-              if not config_opts[:not_expand].include? column.to_sym
-                if not config_opts[:not_call_symbol].include? config
-                  opts[column.to_sym] = expand_options(get_value_of(config), config_opts)
-                else
-                  opts[column.to_sym] = expand_options(config, config_opts)
-                end
-              else
-                opts[column.to_sym] = config
-              end
-            end
-            return opts
-          else
-            return get_value_of options
-          end
-        end
-
-        def get_value_of(value)
-          if value.kind_of? Symbol
-            # If the function exist, we execute it
-            if  self.respond_to? value
-              return self.send value
-            # if the the function not exist, whe set te symbol as a value
-            else
-              return value
-            end
-          elsif value.kind_of? Proc
-            return value.call
-          else
-            return value
-          end
-        end
-
         def update_model_manager
-          @extend_at_configuration.send :update_model_manager
+          @extend_at_configuration.send :update_model_manager if @extend_at_configuration.respond_to? :update_model_manager
         end
 
         def get_type_for_class(type)

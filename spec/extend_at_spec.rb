@@ -70,7 +70,7 @@ describe 'extend_at' do
       lambda {user.private_info.etc = "etc"}.should raise_error(ExtendModelAt::InvalidColumn)
     end
 
-    it "if is't static should support dynamic columns" do
+    it "if isn't static should support dynamic columns" do
       article = Article.new
       lambda {article.extra.etc = "etc"}.should_not raise_error(ExtendModelAt::InvalidColumn)
       article.save :validate => false
