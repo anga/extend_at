@@ -2,6 +2,10 @@
 
 This gem allows you to extend models without migrations: This way you can, i.e., develop your own content types, like in Drupal.
 
+For example, if you want to create an administration panel to add columns to a model, for example, you are working on
+a CMS, and you want to create a _"content type"_ and you need to set the _"columns"_ but you
+don't want to migrate the database, then, you can see [this](https://github.com/anga/extend_at#tips) little tutorial.
+
 ## Status:
 
 [![Build Status](https://secure.travis-ci.org/anga/extend_at.png)](http://travis-ci.org/anga/extend_at)
