@@ -278,7 +278,7 @@ If you like to add a belongs_to relationship, you can do it in this way:
 
 * Hash
 
-  :belongs_to => :onwer => {:class_name => "User"}
+  :belongs_to => {:onwer => {:class_name => "User"}}
 
 For now, hash only accept
 
