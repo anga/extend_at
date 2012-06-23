@@ -256,6 +256,7 @@ Comparations:
 ### Belongs to
 
 If you like to add a belongs_to relationship, you can do it in this way:
+
   # app/models/toolbox.rb
   class Toolbox
   end
