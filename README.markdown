@@ -257,14 +257,14 @@ Comparations:
 
 If you like to add a belongs_to relationship, you can do it in this way:
 
-  # app/models/toolbox.rb
-  class Toolbox
-  end
+    # app/models/toolbox.rb
+    class Toolbox
+    end
 
-  # app/model/tool.rb
-  class Tool
-    extend_at extra, columns => {}, :belongs_to => :toolbox
-  end
+    # app/model/tool.rb
+    class Tool
+      extend_at extra, columns => {}, :belongs_to => :toolbox
+    end
 
 <code>:belongs_to</code> parametter accept
 
