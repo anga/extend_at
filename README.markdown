@@ -2,6 +2,10 @@
 
 This gem allows you to extend models without migrations: This way you can, i.e., develop your own content types, like in Drupal.
 
+For example, if you want to create an administration panel to add columns to a model, for example, you are working on
+a CMS, and you want to create a _"content type"_ and you need to set the _"columns"_ but you
+don't want to migrate the database, then, you can see [this](https://github.com/anga/extend_at#tips) little tutorial.
+
 ## Status:
 
 [![Build Status](https://secure.travis-ci.org/anga/extend_at.png)](http://travis-ci.org/anga/extend_at)
@@ -317,7 +321,7 @@ If you like to do something more dynamic, like create columns and validations de
           columns[name.to_sym] = {
             :type => eval(config.class_type),
             :default => config.default_value,
-            :validate => get_validation(config.validation)
+            :validate => get_validation(config)
           }
         end
         
@@ -330,7 +334,52 @@ If you like to do something more dynamic, like create columns and validations de
       end
     end
 
-This code read the configuration of the columns when you access to the extra column.
+How works?
+    
+    serialize :columns_name
+    
+This make <code>columns_name</code> column work like YAML serialized object. In this case, is used to sotore an array of names of each column name. 
+(See [ActiveRecord::Base](http://api.rubyonrails.org/classes/ActiveRecord/Base.html))
+
+    extend_at :extra, :columns => :get_columns
+    
+This line will use the function <code>get_columns</code> to get the information about each column dynamically.
+This function returns a hash with the information about each column.
+
+    columns_name.each do |name|
+        #...
+    end
+    
+Iterate through each column stored in the column <code>columns_name</code>.
+
+    config = ColumConfig.where(:user_id => self.id, :column => name).first
+
+Search the column configuration stored in a separated model. By this way, we can configura each column easily, we can create a view to create columns and configure it easily.
+
+    columns[name.to_sym] = {
+        :type => eval(config.class_type),
+        :default => config.default_value,
+        :validate => get_validation(config)
+      }
+
+This lines configure the column.
+
+    :type => eval(config.class_type),
+    
+The model <code>ColumConfig</code> have a string column named <code>class_type</code>, can be <code>":integer"</code> or <code>"Fixnum"</code>.
+
+    :default => config.default_value,
+    
+The model <code>ColumConfig</code> have a serialized column named <code>default_valuee</code>, in this way we can sotre integer values, boolean, strings or datetime and time values without problems.
+
+    :validate => get_validation(config.validation)
+    
+This line execute the function <code>get_validation</code> to get a <code>Proc</code> with the validation code.
+This function can use a case/when for select the correct function or use the data of the model <code>config</code> to create a function.
+
+    columns
+    
+Finally we return the colums configuration.
 
 ## Bugs, recomendation, etc
 
