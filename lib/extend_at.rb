@@ -1,4 +1,5 @@
 # encoding: utf-8
+require "active_support"
 require "extend_at/version"
 # require "extend_at/configuration"
 require "extend_at/model_manager"
@@ -28,7 +29,7 @@ module ExtendModelAt
       @columns = @configuration[:columns]
       @value = get_defaults_values @configuration
 
-#       define_associations
+      define_associations
 
       initialize_values
     end
@@ -91,33 +92,84 @@ module ExtendModelAt
       @configuration = value
     end
 
-    def define_associationss
+    def define_associations   
       [:has_one, :has_many, :belongs_to].each do |relation|
-        eval <<-EOS
-          if @configuration.keys.include? :#{relation}
-            raise "Invalid #{relation} value" if not [Hash, Array, NilClass].include? @configuration[:#{relation}].class
-            # We nee an array of models, then, we 
-            if @configuration[:#{relation}].kind_of? Hash
-              list_models = @configuration[:#{relation}].keys
-            elsif @configuration[:#{relation}].kind_of? Array
-              list_models = @configuration[:#{relation}]
-            else
-              list_models = [@configuration[:#{relation}]]
-            end
-            list_models.each do |model|
-              define_method(model.to_sym) do |force_reload|
-                if @configuration[:#{relation}].kind_of? Hash
-                  config = @configuration[:#{relation}][model]
+        if @configuration.keys.include? :"#{relation}"
+          raise "Invalid #{relation} value" if not [Hash, Array, Symbol].include? @configuration[:"#{relation}"].class
+          # We nee an array of models, then, we 
+          if @configuration[:"#{relation}"].kind_of? Hash
+            list_models = @configuration[:"#{relation}"].keys
+          elsif @configuration[:"#{relation}"].kind_of? Array
+            list_models = @configuration[:"#{relation}"]
+          else
+            list_models = [@configuration[:"#{relation}"]]
+          end
+          list_models.each do |model|
+              meta_def model.to_s do |force_reload=false|
+                if @configuration[:"#{relation}"].kind_of? Hash
+                  config = @configuration[:"#{relation}"][model]
                 else
                   config = {}
                 end
-                @model_manager.read_#{relation} model, @configuration[:#{relation}][model], force_reload
+                eval "@model_manager.read_#{relation} model, config, force_reload"
+              end
+
+            if "#{relation}" != "has_many"
+              meta_def "#{model.to_s}=" do |associate|
+                if @configuration[:"#{relation}"].kind_of? Hash
+                  config = @configuration[:"#{relation}"][model]
+                else
+                  config = {}
+                end
+                eval "@model_manager.write_#{relation} model, @configuration[:#{relation}][model], associate"
+                true
+              end
+
+              meta_def "build_#{model.to_s}" do |attributes={}|
+                if @configuration[:"#{relation}"].kind_of? Hash
+                  config = @configuration[:"#{relation}"][model]
+                else
+                  config = {}
+                end
+                eval "@model_manager.build_#{relation} model, config, attributes"
+                true
+              end
+
+              meta_def "create_#{model.to_s}" do |attributes={}|
+                if @configuration[:"#{relation}"].kind_of? Hash
+                  config = @configuration[:"#{relation}"][model]
+                else
+                  config = {}
+                end
+                eval "@model_manager.create_#{relation} model, config, attributes"
+                true
               end
             end
           end
-        EOS
+        end
       end
     end
+
+    ##########
+    # Meta functions
+    
+    def metaclass
+      class << self; self; end;
+    end
+    
+    def meta_eval(&blk)
+      metaclass.instance_eval &blk
+    end
+
+    def meta_def(name, &blk)
+      meta_eval { define_method name, &blk }
+    end
+
+    def class_def name, &blk
+      class_eval { define_method name, &blk }
+    end
+
+    ##### Meta functions #####
 
     def get_adapter(column, value)
       if @columns[column.to_sym][:type] == String

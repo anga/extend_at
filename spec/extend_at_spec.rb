@@ -106,27 +106,38 @@ describe 'extend_at' do
     end
   end
 
-#   context "associations support" do
-#     context "belongs_to" do
-#       it "simple usage" do
-#         box = Toolbox.new
-#         box.save
-#         box.extra.create_tool
-#         box.extra.tools.first.extra.toolbox.should == box
-#       end
-#     end
-# 
-#     context "has_many" do
-#       context "simple usage" do
-#         box = Toolbox.new
-#         box.save
-#         box.extra.create_tool
-#         box.extra.create_tool
-#         box.extra.create_tool
-#         box.extra.tools.class.should == Array
-#         box.extra.tools.size.should == 3
-#         box.extra.tools.first.extra.toolbox.should == box
-#       end
-#     end
-#   end
+  context "associations support" do
+    context "belongs_to" do
+      it "simple usage" do
+        tool = Tool.new
+        tool.extra.name = "Hammer"
+        tool.save
+        tool.extra.respond_to?(:create_toolbox).should == true
+        tool.extra.create_toolbox(:name => "Toolbox").should == true
+        tool.extra.toolbox.class.should == Toolbox
+        tool.extra.toolbox.name.should == "Toolbox"
+      end
+    end
+
+    context "has_many" do
+      it "simple usage" do
+        pending "Working on it"
+        tool = Tool.new
+        tool.extra.name = "Hammer"
+        tool.save
+        tool.extra.respond_to?(:create_toolbox).should == true
+        tool.extra.create_toolbox.should == true
+        tool.extra.create_toolbox.should == true
+        tool.extra.toolbox.class.should == Toolbox
+        box = Toolbox.new
+        box.save
+        box.extra.create_tool
+        box.extra.create_tool
+        box.extra.create_tool
+        box.extra.tools.class.should == Array
+        box.extra.tools.size.should == 3
+        box.extra.tools.first.extra.toolbox.should == box
+      end
+    end
+  end
 end

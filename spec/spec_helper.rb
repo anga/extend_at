@@ -1,3 +1,7 @@
+require 'rubygems'
+require 'bundler/setup'
+require 'rspec'
+
 require 'database_cleaner/active_record/base'
 require 'database_cleaner'
 
@@ -6,6 +10,11 @@ require 'app/config/environment'
 
 require 'rubygems'
 require 'bundler/setup'
+
+require 'extend_at'
+
+
+# Bundler.require(:default)
 
 
 RSpec.configure do |config|
@@ -21,4 +30,3 @@ RSpec.configure do |config|
 #     DatabaseCleaner.clean
 #   end
 end
-

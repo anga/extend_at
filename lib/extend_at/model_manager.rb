@@ -87,8 +87,75 @@ module ExtendModelAt
     def to_hash
       all_hash
     end
+    
+    ##########
+    # Model associations
+    def read_belongs_to(model_name, configuration,force_reload=false)
+      if @config[:"belongs_to"][model_name.to_sym].kind_of? Hash
+        column = @config[:"belongs_to"][model_name.to_sym][:foreign_key] || :"#{model_name}_id"
+      else
+        column = :"#{model_name}_id"
+      end
+      class_name = @config[:"belongs_to"][model_name.to_sym][:class_name]
+      type = get_type column
+      type_class = get_type_class type
+      
+      # We try to get the model
+      # eval "User.find(...try(:first).try(:id))"
+      eval "#{class_name}.find(#{get_value(column)})"
+      
+    end
+    
+    def read_has_many(model_name, configuration,force_reload=false)
+      Object
+    end
+    
+    def read_has_one(model_name, configuration,force_reload=false)
+      Object
+    end
+    
+    def write_belongs_to(model_name, configuration,associate)
+      puts "Warnig: Dummy function"
+    end
+
+    # TODO: I have problems to create a temporal model
+    def build_belongs_to(model_name, configuration,attributes)
+      puts "Warnig: Dummy function"
+#       config = @config[:"belongs_to"][model_name.to_sym]
+# 
+#       type = get_type(config[:foreign_key] || :"#{model_name}_id")
+#       type_class = get_type_class type
+#       return if type.nil?
+#       # We create the model and save it
+#       new_model = eval "#{config[:class_name]}.new(#{attributes})"
+# 
+#       # Set the model id in the correct column
+#       assign(config[:foreign_key] || :"#{model_name.to_s.underscore}_id", new_model.id)
+    end
+
+    # Create a belongs_to relationship
+    # Executed when the user use, for example, Post.create_comment :title => "Bla bla", :comment => "Comment ..."
+    # * _model_name_: Model class name
+    # * _configuration_: Relationship configuration like __;foreign_key__
+    # * _attributes_: Attributes to set to the new model
+    def create_belongs_to(model_name, configuration = {},attributes = {})
+      config = @config[:"belongs_to"][model_name.to_sym]
+      
+      type = get_type(config[:foreign_key] || :"#{model_name}_id")
+      type_class = get_type_class type
+      return if type.nil?
+      # We create the model and save it
+      new_model = eval "#{config[:class_name]}.new(#{attributes})"
+      return false if not new_model.save
+
+      # Set the model id in the correct column
+      assign(config[:foreign_key] || :"#{model_name.to_s.underscore}_id", new_model.id)
+    end
+    
+    ##### Model associations #####
 
     protected
+    
     def get_column_model(column)
       type = get_type column
       type_class = get_type_class type

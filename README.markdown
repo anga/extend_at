@@ -249,6 +249,41 @@ Comparations:
 * gt
 * match
 
+### Belongs to
+
+If you like to add a belongs_to relationship, you can do it in this way:
+  # app/models/toolbox.rb
+  class Toolbox
+  end
+
+  # app/model/tool.rb
+  class Tool
+    extend_at extra, columns => {}, :belongs_to => :toolbox
+  end
+
+<code>:belongs_to</code> parametter accept
+
+* One name
+
+  :belongs_to => :toolbox
+  
+* Array of names
+
+  :belongs_to => [:toolbox, :owner]
+
+* Hash
+
+  :belongs_to => :onwer => {:class_name => "User"}
+
+For now, hash only accept
+
+* class_name
+* polymorphic
+* foreign_key
+
+_Note_, this new feature is under heavy development, use it under your own risk.
+  
+
 ### Integration in the views
 
 If you like to use some configuration variable in your views you only need put the name of the input like <code>:extra_name</code>, for example:
