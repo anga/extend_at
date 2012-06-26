@@ -24,7 +24,9 @@ After that, you need execute:
 
 <code>rails generate extend_at:install</code>
 
-This will generate one migration with all necessary tables.
+This will generate one migration with all necessary tables. Now you need migrate your database.
+
+<code>rake db:migrate</code>
 
 ## Usage
 
