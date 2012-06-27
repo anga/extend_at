@@ -5,20 +5,399 @@ require "extend_at/version"
 require "extend_at/model_manager"
 require "extend_at/models/all"
 
+# ExtendAt allow you to extend the columns of a model without make database migrations.
+#
+# For example, if you want to create an administration panel to add columns to a model, for example, you are working on
+# a CMS, and you want to create a _"content type"_ and you need to set the _"columns"_ but you
+# don't want to migrate the database, then, you can see [this](https://github.com/anga/extend_at#tips) little tutorial.
+# 
+# = Important
+# This gem was only tested with Ruby on Rails 3
+#
+# = Installation
+# [+gem install extend_at+]
+# 
+# == Rails 3
+# Add in your Gemfile:
+# 
+# [+gem 'extend_at'+]
+# 
+# After that, you need execute:
+# 
+# [+rails generate extend_at:install+]
+# 
+# This will generate one migration with all necessary tables. Now you need migrate your database.
+# 
+# [+rake db:migrate+]
+#
+# = Usage
+# You don't need an extra column in your model. Only you need is put next code in your model.
+# 
+# [+extend_at :extra+]
+# 
+# For example:
+# 
+#     class User < ActiveRecord::Base
+#       extend_at :extra
+#     end
+# 
+# Now you can create extra attributes:
+# 
+#     user.extra.private_photos = true
+#     user.extra.subscribe_to_news = false
+#     user.extra.profile_description = ''
+#     user.save
+# 
+# This is the same:
+# 
+#     user.extra_private_photos = true
+#     user.extra_subscribe_to_news = false
+#     user.extra_profile_description = ''
+#     user.save
+# 
+# Or:
+# 
+#     user[:extra_private_photos] = true
+#     user[:extra_subscribe_to_news] = false
+#     user[:extra_profile_description] = ''
+#     user.save
+#= Columns configuration
+# 
+# You can configure each column.
+# 
+# == Set column type
+# 
+# You can set the colum's type.
+# 
+#     class User < ActiveRecord::Base
+#       extend_at :extra, :columns => {
+#         :private_photos => {
+#           :type => :boolean
+#         }, :age => {
+#           :type => :get_type
+#         }, :profile_description => {
+#           :type => lambda {
+#             String
+#           }
+#         }, :last_loggin => {
+#           :type => Time.now.class
+#         }, :subscribe_to_rss => :get_rss_config
+#       }
+# 
+#       protected
+#       def get_type
+#         Fixnum
+#       end
+# 
+#       def get_rss_config
+#         {
+#           :type => :boolean
+#         }
+#       end
+#     end
+# 
+# === Valid types
+# 
+# Valid symbols:
+# 
+# * <code>:any</code>
+# * <code>:binary</code>
+# * <code>:boolean</code>
+# * <code>:date</code>
+# * <code>:datetime</code>
+# * <code>:decimal</code>
+# * <code>:float</code>
+# * <code>:integer</code>
+# * <code>:string</code>
+# * <code>:text</code>
+# * <code>:time</code>
+# * <code>:timestamp</code>
+# 
+# But you can use classes.
+# 
+# * Float: <code>:any</code>
+# * Fixnum: <code>:integer</code>
+# * String: <code>:text</code>
+# * Time: <code>:timestamp</code>
+# * Date: <code>:datetime</code>
+# 
+# Else, return <code>:any</code>
+# 
+# === Set default value
+# 
+#     class User < ActiveRecord::Base
+#       extend_at :extra, :columns => {
+#         :private_photos => {
+#           :type => :boolean,
+#           :default => true
+#         }, :age => {
+#           :type => :get_type,
+#           :default => 1
+#         }, :profile_description => {
+#           :type => lambda {
+#             String
+#           },
+#           :default => :get_default_profile_description
+#         }, :last_loggin => {
+#           :type => Time.now.class,
+#           :default => lambda {
+#             self.created_at.time
+#           }
+#         }, :subscribe_to_rss => :get_rss_config
+#       }
+# 
+#       protected
+#       def get_type
+#         Fixnum
+#       end
+# 
+#       def get_rss_config
+#         {
+#           :type => :boolean,
+#           :default => true
+#         }
+#       end
+# 
+#       def get_default_profile_description
+#         Description.where(:user_id => self.id).default
+#       end
+#     end
+# 
+# === Set validation
+# 
+#     class User < ActiveRecord::Base
+#       extend_at :extra, :columns => {
+#         :private_photos => {
+#           :type => :boolean,
+#           :default => true
+#         }, :age => {
+#           :type => :get_type,
+#           :default => 1,
+#           :validate => lambda {
+#             |age|
+#             errors.add :extra_age, "Are you Matusalen?" if age > 150
+#             errors.add :extra_age, "Are you a fetus?" if age <= 0
+#           }
+#         }, :profile_description => {
+#           :type => lambda {
+#             String
+#           },
+#           :default => :get_default_profile_description,
+#           :lambda => :must_not_use_strong_language
+#         }, :last_loggin => {
+#           :type => Time.now.class,
+#           :default => lambda {
+#             self.created_at.time
+#           },
+#           :validate => lambda {
+#             |time|
+#             errors.add :extra_last_loggin, "You can't loggin on the future" if time > Time.now
+#           }
+#         }, :subscribe_to_rss => :get_rss_config
+#       }
+# 
+#       protected
+#       STRONG_WORD = [
+#         #...
+#       ]
+# 
+#       def get_type
+#         Fixnum
+#       end
+# 
+#       def get_rss_config
+#         {
+#           :type => :boolean,
+#           :default => true
+#         }
+#       end
+# 
+#       def get_default_profile_description
+#         Description.where(:user_id => self.id).default
+#       end
+# 
+#       def must_not_use_strong_language(desc)
+#         errors.add :cofig_profile_description, "You must not use strong language" if desc =~ /(#{STRONG_WORD.join('|')})/
+#       end
+#     end
+# 
+# == Static columns
+# 
+# If you like to restrict the existent extended columns, you should use <code>:static => true</code>
+# 
+#     class User < ActiveRecord::Base
+#       extend_at :extra, :columns => {
+#         :private_photos => {
+#           :type => :boolean,
+#           :default => true
+#         }
+#       }, :static => true
+#     end
+# 
+# Now, <code>User.extra</code> only accept <code>private_photos</code> column
+# 
+# == Scopes
+# 
+# You can use scope like:
+# 
+#     User.extra_last_loggin_gt_eq(1.week.ago).extra_age_gt_eq(18).where(:column => "value").all
+# 
+# Valid scopes:
+# 
+#     <extention>_<column_name>_<comparation>
+# 
+# Comparations:
+# 
+# * lt
+# * lt_eq
+# * eq
+# * gt_eq
+# * gt
+# * match
+# 
+# == Belongs to
+# 
+# If you like to add a belongs_to relationship, you can do it in this way:
+# 
+#     # app/models/toolbox.rb
+#     class Toolbox
+#     end
+# 
+#     # app/model/tool.rb
+#     class Tool
+#       extend_at extra, columns => {}, :belongs_to => :toolbox
+#     end
+# 
+# [+:belongs_to+] parametter accept
+# 
+# * One name
+# 
+#   [+:belongs_to => :toolbox+]
+# 
+# * Array of names
+# 
+#   [+:belongs_to => [:toolbox, :owner]+]
+# 
+# * Hash
+# 
+#   [+:belongs_to => {:onwer => {:class_name => "User"}}+]
+# 
+# For now, hash only accept
+# 
+# * class_name
+# * polymorphic
+# * foreign_key
+# 
+# _Note_, this new feature is under heavy development, use it under your own risk.
+# 
+# 
+# == Integration in the views
+# 
+# If you like to use some configuration variable in your views you only need put the name of the input like <code>:extra_name</code>, for example:
+# 
+#     <% form_for(@user) do |f| %>
+#       ...
+#       <div class="field">
+#         <%= f.label :extra_private_photos %><br />
+#         <%= f.check_box :extra_private_photos %>
+#       </div>
+#       ...
+#     <% end %>
+# 
+# == More
+# 
+# For more documentation go to [wiki](https://github.com/anga/extend_at/wiki "extend_at wiki").
+# 
+# == Tips
+# 
+# If you like to do something more dynamic, like create columns and validations depending of some model or configuration, then you can do something like this:
+# 
+#     class User < ActiveRecord::Base
+#       extend_at :extra, :columns => :get_columns
+#       serialize :columns_name
+# 
+#       protected
+#       def get_columns
+#         columns = {}
+#         columns_name.each do |name|
+#           config = ColumConfig.where(:user_id => self.id, :column => name).first
+#           columns[name.to_sym] = {
+#             :type => eval(config.class_type),
+#             :default => config.default_value,
+#             :validate => get_validation(config)
+#           }
+#         end
+# 
+#         columns
+#       end
+# 
+#       # Accept a name of a validation and return the Proc with the validation code
+#       def get_validation(validation_type)
+#         # ...
+#       end
+#     end
+# 
+# How works?
+# 
+#     [+serialize :columns_name+]
+# 
+# This make <code>columns_name</code> column work like YAML serialized object. In this case, is used to sotore an array of names of each column name.
+# (See [ActiveRecord::Base](http://api.rubyonrails.org/classes/ActiveRecord/Base.html))
+# 
+#     [+extend_at :extra, :columns => :get_columns+]
+# 
+# This line will use the function <code>get_columns</code> to get the information about each column dynamically.
+# This function returns a hash with the information about each column.
+# 
+#     columns_name.each do |name|
+#         #...
+#     end
+# 
+# Iterate through each column stored in the column <code>columns_name</code>.
+# 
+#     config = ColumConfig.where(:user_id => self.id, :column => name).first
+# 
+# Search the column configuration stored in a separated model. By this way, we can configura each column easily, we can create a view to create columns and configure it easily.
+# 
+#     columns[name.to_sym] = {
+#         :type => eval(config.class_type),
+#         :default => config.default_value,
+#         :validate => get_validation(config)
+#       }
+# 
+# This lines configure the column.
+# 
+#     [+:type => eval(config.class_type),+]
+# 
+# The model <code>ColumConfig</code> have a string column named <code>class_type</code>, can be <code>":integer"</code> or <code>"Fixnum"</code>.
+# 
+#     [+:default => config.default_value,+]
+# 
+# The model <code>ColumConfig</code> have a serialized column named <code>default_valuee</code>, in this way we can sotre integer values, boolean, strings or datetime and time values without problems.
+# 
+#     [+:validate => get_validation(config.validation)+]
+# 
+# This line execute the function <code>get_validation</code> to get a <code>Proc</code> with the validation code.
+# This function can use a case/when for select the correct function or use the data of the model <code>config</code> to create a function.
+# 
+#     [+columns+]
+# 
+# Finally we return the colums configuration.
 module ExtendModelAt
+  # [Module::included](http://ruby-doc.org/core-1.9.3/Module.html#method-i-included)
   def self.included(base)
     base.extend(ClassMethods)
   end
 
-  # Errors
-  class InvalidColumn < Exception
+  class InvalidColumn < Exception # :nodoc:
   end
 
-  class ArgumentError < Exception
+  class ArgumentError < Exception # :nodoc:
   end
 
-  # The object how controll the data
+  # The object who control the data
   class Extention
+    # Initizlize the configuration and the model mannager
     def initialize(options={})
       @configuration = ExtendModelAt::Configuration.new.run options, options[:model].clone
       @model_manager = ::ExtendModelAt::ModelManager.new(@configuration[:column_name].to_s, options[:model], @configuration)
@@ -34,10 +413,12 @@ module ExtendModelAt
       initialize_values
     end
 
+    # Get the value of the extended colum called [+key+]
     def [](key)
       @model_manager.get_value(key)
     end
 
+    # Set the value of the extended colum called [+key+] with the value [+value+]
     def []=(key, value)
       if not valid_type? value, @columns[key.to_sym].try(:[],:type)
         # Try to adapt the value
@@ -49,22 +430,30 @@ module ExtendModelAt
       @model_manager.assign(key,value)
     end
 
+    # This class(+Extention+) respond to all methods, unknown methos are used to access to the extended colums
     def self.respond_to?(symbol, include_private=false)
       true
     end
 
+    # This class(+Extention+) respond to all methods, unknown methos are used to access to the extended colums
     def respond_to?(symbol, include_private=false)
       true
     end
 
+    # Return an array with all values
+    #   User.extend.all_values # => [23, "Bob", "bob@mysite.com"]
     def all_values
       @model_manager.all_values
     end
-
+    
+    # Return an array with all column names
+    #   User.extend.all_names # => ["age", "name", "email"]
     def all_names
       @model_manager.all_names
     end
 
+    # Return a hash with all column names and values
+    #   User.extend.all_hash # => {:age => 23, :name => "Bob", :email => "bob@mysite.com"}
     def all_hash
       @model_manager.all_hash
     end
@@ -84,14 +473,17 @@ module ExtendModelAt
 
     private
 
+    # Return the configuration like a hash
     def configuration
       @configuration
     end
 
+    # Set the configuration
     def configuration=(value)
       @configuration = value
     end
 
+    # Create all model relationships with the user configuration (has_many, has_one and belongs_to)
     def define_associations   
       [:has_one, :has_many, :belongs_to].each do |relation|
         if @configuration.keys.include? :"#{relation}"
@@ -153,24 +545,25 @@ module ExtendModelAt
     ##########
     # Meta functions
     
-    def metaclass
+    def metaclass # :nodoc:
       class << self; self; end;
     end
     
-    def meta_eval(&blk)
+    def meta_eval(&blk) # :nodoc:
       metaclass.instance_eval &blk
     end
 
-    def meta_def(name, &blk)
+    def meta_def(name, &blk) # :nodoc:
       meta_eval { define_method name, &blk }
     end
 
-    def class_def name, &blk
+    def class_def name, &blk # :nodoc:
       class_eval { define_method name, &blk }
     end
 
     ##### Meta functions #####
 
+    # Return the correct method used to transform the column value the correct Ruby class
     def get_adapter(column, value)
       if @columns[column.to_sym][:type] == String
         return :to_s
@@ -186,6 +579,10 @@ module ExtendModelAt
       nil
     end
 
+    # Initialize all columns with +nil+
+    #--
+    # NOTE: Maybe depercated
+    #++
     def initialize_values
       if not @value.kind_of? Hash
         @model.attributes[@column_name] = {}.to_yaml
@@ -193,6 +590,7 @@ module ExtendModelAt
       end
     end
 
+    # Get all default values
     def get_defaults_values(options = {})
       defaults_ = {}
       options[:columns].each do |column, config|
@@ -201,19 +599,33 @@ module ExtendModelAt
       defaults_
     end
 
+    # Update the model manager
     def update_model_manager
       @model_manager.send :update
     end
 
+    # Return true if the value is valid for the type
     def valid_type?(value, type)
       @model.send :valid_type?, value, type
     end
 
+    # Used to use scopes
     def search(column, method, value)
       @model_manager.send:search, column, method, value
     end
   end
 
+  # This class will extend the Ruby on Rails model.
+  # = Rewrite
+  # * +assign_attributes+
+  # * +[]+
+  # * +[]=+
+  # * +self.respond_to?+
+  # * +respond_to?+
+  # * +self.method_missing+
+  # * +method_missing+
+  # = New methos
+  # * +search_in_extention+
   module ClassMethods
     def extend_at(column_name, options = {})
       assign_attributes_eval = "
@@ -309,10 +721,13 @@ module ExtendModelAt
       end
       "
 
+      # Main extention
       self.class_eval <<-EOS
         eval assign_attributes_eval
       EOS
 
+      # More extentions.
+      # Add the ExtendAt validation process and define the method to extend the columns.
       class_eval do
       public
         validate :extend_at_validations
@@ -329,6 +744,7 @@ module ExtendModelAt
 
       protected
 
+        # ExtendAt validation process
         def extend_at_validations
 #           @extend_at_configuration.valid?
           @extend_at_validation ||= {} if not @extend_at_validation.kind_of? Hash
@@ -341,11 +757,11 @@ module ExtendModelAt
           end
         end
 
-        def set_extend_at_validation(value={})
-          @extend_at_validation
+        def set_extend_at_validation(value={}) # :nodoc:
+          @extend_at_validation # NOTE FIXME ????
         end
 
-        def update_model_manager
+        def update_model_manager # :nodoc:
           @extend_at_configuration.send :update_model_manager if @extend_at_configuration.respond_to? :update_model_manager
         end
 

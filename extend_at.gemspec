@@ -19,10 +19,10 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_runtime_dependency 'rails', '~> 3.1'
+  s.add_runtime_dependency "activesupport", '~> 3.1'
   s.add_development_dependency "rspec", '~> 2.8'
   s.add_development_dependency "rspec-core", '~> 2.8'
   s.add_development_dependency "rspec-expectations", '~> 2.8'
-  s.add_development_dependency "activesupport", '~> 3.1'
 #   s.add_development_dependency "rspec-mocks", '~> 2.8.0'
   s.add_development_dependency "database_cleaner", "~> 0.8"
   
