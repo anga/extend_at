@@ -9,7 +9,6 @@ don't want to migrate the database, then, you can see [this](https://github.com/
 ## Status:
 
 [![Build Status](https://secure.travis-ci.org/anga/extend_at.png)](http://travis-ci.org/anga/extend_at)
-[![Still Maintained](http://stillmaintained.com/anga/extend_at.png)](http://stillmaintained.com/anga/extend_at)
 
 ## Installation
 
